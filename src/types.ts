@@ -22,7 +22,7 @@ export interface Habit {
 
   // Streak Freeze & Rest Days
   frozenDates?: string[]; // array of "YYYY-MM-DD" protected by freeze
-  streakFreezes?: number; // available freeze tokens (e.g. 2 or 3)
+  streakFreezes?: number; // available freeze tokens
 
   // Reminder Notification features
   reminderEnabled?: boolean;
@@ -43,4 +43,11 @@ export interface Badge {
   currentValue: number;
   targetValue: number;
   unlockedAt?: string;
+}
+
+export interface UserProfile {
+  name: string;
+  bio: string;
+  avatarEmoji: string;
+  joinedDate: string;
 }

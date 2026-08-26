@@ -8,10 +8,12 @@ import { ShareCardModal } from './components/ShareCardModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { PomodoroTimer, PomodoroSession } from './components/PomodoroTimer';
 import { AchievementsModal } from './components/AchievementsModal';
+import { ProfileModal } from './components/ProfileModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { calculateBadges } from './achievements';
 import { sendHabitNotification } from './notification';
 import { playCheckSound, playCelebrationSound } from './sound';
+import { UserProfile } from './types';
 import { getTodayString, formatDate } from './utils';
 import {
   Calendar as CalendarIcon,
@@ -133,7 +135,32 @@ export function App() {
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [shareHabit, setShareHabit] = useState<Habit | null>(null);
   const [showAchievements, setShowAchievements] = useState<boolean>(false);
+  const [showProfile, setShowProfile] = useState<boolean>(false);
   const [pomodoroSession, setPomodoroSession] = useState<PomodoroSession | null>(null);
+
+  const [userProfile, setUserProfile] = useState<UserProfile>(() => {
+    try {
+      const saved = localStorage.getItem('minimal_habit_profile_v1');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // default
+    }
+    return {
+      name: 'Irfan',
+      bio: 'Konsisten setiap hari 🚀',
+      avatarEmoji: '⚡',
+      joinedDate: 'Mei 2026',
+    };
+  });
+
+  const handleSaveProfile = (updated: UserProfile) => {
+    setUserProfile(updated);
+    try {
+      localStorage.setItem('minimal_habit_profile_v1', JSON.stringify(updated));
+    } catch (e) {
+      console.error(e);
+    }
+  };
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem('minimal_habit_theme_v1');
@@ -583,18 +610,18 @@ export function App() {
               {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            {/* Profile Avatar */}
-            <div
-              className={`w-9 h-9 rounded-full flex items-center justify-center border cursor-pointer select-none transition-transform active:scale-95 ${
+            {/* Profile Avatar Button */}
+            <button
+              onClick={() => setShowProfile(true)}
+              className={`w-9 h-9 rounded-full flex items-center justify-center border cursor-pointer select-none transition-transform active:scale-95 text-base ${
                 isDarkMode
-                  ? 'bg-[#1a1a28] border-[#8338ec]/40 text-[#8338ec] shadow-sm shadow-[#8338ec]/20'
-                  : 'bg-indigo-50 border-indigo-200 text-indigo-600'
+                  ? 'bg-[#1a1a28] border-[#8338ec]/40 shadow-sm shadow-[#8338ec]/20'
+                  : 'bg-indigo-50 border-indigo-200'
               }`}
-              title="User Profile"
-              onClick={() => setShowAchievements(true)}
+              title="Profil Pengguna"
             >
-              <User className="w-4 h-4" />
-            </div>
+              {userProfile.avatarEmoji}
+            </button>
           </div>
         </div>
       </header>
@@ -751,7 +778,7 @@ export function App() {
           setEditingHabit(null);
           setIsModalOpen(true);
         }}
-        onOpenProfile={() => setShowAchievements(true)}
+        onOpenProfile={() => setShowProfile(true)}
         isDarkMode={isDarkMode}
       />
 
@@ -776,6 +803,16 @@ export function App() {
       {shareHabit && (
         <ShareCardModal habit={shareHabit} onClose={() => setShareHabit(null)} isDarkMode={isDarkMode} />
       )}
+
+      {/* Profile Modal */}
+      <ProfileModal
+        isOpen={showProfile}
+        onClose={() => setShowProfile(false)}
+        profile={userProfile}
+        onSaveProfile={handleSaveProfile}
+        habits={habits}
+        isDarkMode={isDarkMode}
+      />
 
       {/* Achievements Modal */}
       <AchievementsModal
