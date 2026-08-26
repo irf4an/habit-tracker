@@ -87,15 +87,12 @@ export const HabitCard: React.FC<HabitCardProps> = ({
     });
   };
 
-  const handleCellClick = (dateStr: string, e: React.MouseEvent) => {
-    if (e.shiftKey || isNumeric) {
-      setSelectedDate(dateStr);
-      setNoteText(habit.notes?.[dateStr] || '');
-      setCellVal(habit.history[dateStr] || 0);
-    } else {
-      const current = habit.history[dateStr] || 0;
-      onToggleDate(habit.id, dateStr, current === 1 ? 0 : 1);
-    }
+  // Klik kotak heatmap sekarang hanya buka modal detail — tidak langsung toggle isi (mencegah isi acak saat tap random)
+  const handleCellClick = (dateStr: string) => {
+    if (isTodayCompleted && false) {} // keep ref
+    setSelectedDate(dateStr);
+    setNoteText(habit.notes?.[dateStr] || '');
+    setCellVal(habit.history[dateStr] || 0);
   };
 
   const saveCellDetails = () => {
@@ -356,9 +353,9 @@ export const HabitCard: React.FC<HabitCardProps> = ({
                           aria-pressed={isDone || isFrozen}
                           aria-disabled={day.isFuture}
                           disabled={day.isFuture}
-                          onClick={(e) => handleCellClick(day.dateStr, e)}
+                          onClick={() => handleCellClick(day.dateStr)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCellClick(day.dateStr, e as unknown as React.MouseEvent); }
+                            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCellClick(day.dateStr); }
                           }}
                           title={`${day.dateStr}${isFrozen ? ' [❄️ Streak Freeze]' : ''}${rawVal > 0 ? ` (${rawVal}${habit.unit ? ' ' + habit.unit : ''})` : ''}${hasNote ? ' [Note attached]' : ''}${isToday ? ' - Today' : ''}`}
                           className={`w-3 h-3 rounded-[2px] relative touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] focus-visible:ring-offset-1 focus-visible:ring-offset-transparent ${
