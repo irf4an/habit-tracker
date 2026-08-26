@@ -111,19 +111,15 @@ export const ManageView: React.FC<ManageViewProps> = ({
           </div>
         </div>
 
-        {/* LIST OF HABITS - ROBUST 2-TIER CARD LAYOUT */}
-        <div className="space-y-3">
+        <div className="space-y-3" role="list" aria-label="Daftar kebiasaan — kelola urutan dan arsip">
           {displayedHabits.map((habit, idx) => {
             const completedCount = Object.keys(habit.history).filter((k) => habit.history[k] > 0).length;
-
             return (
               <div
                 key={habit.id}
-                className={`border rounded-2xl p-3.5 sm:p-4 transition-all flex flex-col gap-2.5 ${
-                  isDarkMode
-                    ? 'bg-[#0f0f15] border-[#1e1e28] hover:border-[#8338ec]/40'
-                    : 'bg-zinc-50 border-zinc-200 hover:border-zinc-300'
-                }`}
+                role="listitem"
+                aria-label={`${idx + 1}. ${habit.name} — ${completedCount} selesai`}
+                className={`border rounded-2xl p-3.5 sm:p-4 transition-all flex flex-col gap-2.5 focus-within:ring-2 focus-within:ring-[#8338ec] ${isDarkMode ? 'bg-[#0f0f15] border-[#1e1e28] hover:border-[#8338ec]/40' : 'bg-zinc-50 border-zinc-200 hover:border-zinc-300'}`}
               >
                 {/* Tier 1 (Top): Index + Emoji + Name + Category + Goal */}
                 <div className="flex items-center justify-between gap-2">

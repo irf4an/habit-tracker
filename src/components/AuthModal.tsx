@@ -25,6 +25,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [isOpen, onClose]);
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -85,13 +91,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
-      <div
-        className={`border rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative max-h-[90vh] overflow-y-auto ${
-          isDarkMode
-            ? 'bg-[#12121a] border-[#8338ec]/35 text-white'
-            : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'
-        }`}
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in" role="dialog" aria-modal="true" aria-label={userEmail ? 'Status sinkronisasi cloud' : isSignUp ? 'Daftar akun cloud' : 'Masuk akun cloud'} onClick={onClose}>
+      <div role="document" onClick={(e) => e.stopPropagation()} className={`border rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative max-h-[90vh] overflow-y-auto ${isDarkMode ? 'bg-[#12121a] border-[#8338ec]/35 text-white' : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'}`}
         style={{
           boxShadow: isDarkMode
             ? `0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(131,56,236,0.18)`
@@ -107,34 +108,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </h2>
           </div>
 
-          <button
-            onClick={onClose}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-              isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#1e1e2c]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'
-            }`}
-          >
-            <X className="w-5 h-5" />
+          <button type="button" aria-label="Tutup dialog" onClick={onClose} className={`p-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#1e1e2c]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'}`}>
+            <X className="w-5 h-5" aria-hidden />
           </button>
         </div>
-
-        {/* If logged in */}
         {userEmail ? (
           <div className="space-y-4 animate-in fade-in">
-            <div className={`p-4 rounded-2xl border text-center ${
-              isDarkMode ? 'bg-[#0f0f16] border-[#1e1e28]' : 'bg-zinc-50 border-zinc-200'
-            }`}>
-              <div className="w-12 h-12 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center mx-auto mb-2.5">
-                <CheckCircle2 className="w-6 h-6" />
-              </div>
-              <h4 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
-                Tersambung ke Cloud
-              </h4>
-              <p className={`text-xs mt-1 font-mono ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                {userEmail}
-              </p>
-              <p className={`text-[11px] mt-2 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                Setiap habit yang kamu centang atau tambahkan otomatis disinkronkan ke cloud database.
-              </p>
+            <div className={`p-4 rounded-2xl border text-center ${isDarkMode ? 'bg-[#0f0f16] border-[#1e1e28]' : 'bg-zinc-50 border-zinc-200'}`}>
+              <div className="w-12 h-12 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center mx-auto mb-2.5" aria-hidden><CheckCircle2 className="w-6 h-6" /></div>
+              <h4 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Tersambung ke Cloud</h4>
+              <p className={`text-xs mt-1 font-mono ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>{userEmail}</p>
+              <p className={`text-[11px] mt-2 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Setiap habit yang kamu centang otomatis disinkronkan.</p>
             </div>
 
             <button
@@ -152,52 +136,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </p>
 
             {message && (
-              <div className={`p-3 rounded-xl border text-xs flex items-start gap-2 ${
-                message.type === 'success'
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                  : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
-              }`}>
-                {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
+              <div role="alert" className={`p-3 rounded-xl border text-xs flex items-start gap-2 ${message.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-400'}`}>
+                {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" aria-hidden /> : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden />}
                 <span>{message.text}</span>
               </div>
             )}
-
             <div>
-              <label className={`block text-xs font-mono uppercase mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                Email
-              </label>
+              <label htmlFor="auth-email" className={`block text-xs font-mono uppercase mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Email</label>
               <div className="relative">
-                <Mail className={`w-4 h-4 absolute left-3 top-2.5 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`} />
-                <input
-                  type="email"
-                  required
-                  placeholder="nama@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full border rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-[#8338ec] ${
-                    isDarkMode ? 'bg-[#0a0a0f] border-[#252538] text-white' : 'bg-zinc-50 border-zinc-300 text-zinc-900'
-                  }`}
-                />
+                <Mail className={`w-4 h-4 absolute left-3 top-2.5 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`} aria-hidden />
+                <input id="auth-email" type="email" required placeholder="nama@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className={`w-full border rounded-xl pl-9 pr-3 py-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0a0a0f] border-[#252538] text-white' : 'bg-zinc-50 border-zinc-300 text-zinc-900'}`} />
               </div>
             </div>
-
             <div>
-              <label className={`block text-xs font-mono uppercase mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                Password
-              </label>
+              <label htmlFor="auth-password" className={`block text-xs font-mono uppercase mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Password</label>
               <div className="relative">
-                <Key className={`w-4 h-4 absolute left-3 top-2.5 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`} />
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  placeholder="Minimal 6 karakter"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full border rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-[#8338ec] ${
-                    isDarkMode ? 'bg-[#0a0a0f] border-[#252538] text-white' : 'bg-zinc-50 border-zinc-300 text-zinc-900'
-                  }`}
-                />
+                <Key className={`w-4 h-4 absolute left-3 top-2.5 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`} aria-hidden />
+                <input id="auth-password" type="password" required minLength={6} placeholder="Minimal 6 karakter" value={password} onChange={(e) => setPassword(e.target.value)} className={`w-full border rounded-xl pl-9 pr-3 py-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0a0a0f] border-[#252538] text-white' : 'bg-zinc-50 border-zinc-300 text-zinc-900'}`} />
               </div>
             </div>
 

@@ -17,6 +17,12 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
   isDarkMode = true,
 }) => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'unlocked' | 'locked'>('all');
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -32,11 +38,11 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
   const levelProgress = Math.min(100, Math.round((totalXp / nextLevelXp) * 100));
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in" role="dialog" aria-modal="true" aria-label="Pencapaian dan lencana" onClick={onClose}>
       <div
-        className={`border rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl relative max-h-[90vh] overflow-y-auto ${
-          isDarkMode ? 'bg-[#12121a] border-[#8338ec]/35 text-white' : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'
-        }`}
+        role="document"
+        onClick={(e) => e.stopPropagation()}
+        className={`border rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl relative max-h-[90vh] overflow-y-auto ${isDarkMode ? 'bg-[#12121a] border-[#8338ec]/35 text-white' : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'}`}
         style={{
           boxShadow: isDarkMode ? `0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(131,56,236,0.18)` : `0 20px 50px rgba(0,0,0,0.15)`,
         }}
@@ -57,17 +63,10 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-              isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#1e1e2c]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'
-            }`}
-          >
-            <X className="w-5 h-5" />
+          <button type="button" aria-label="Tutup pencapaian" onClick={onClose} className={`p-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#1e1e2c]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'}`}>
+            <X className="w-5 h-5" aria-hidden />
           </button>
         </div>
-
-        {/* Level & XP Banner */}
         <div className={`p-4 rounded-2xl border mb-6 relative overflow-hidden ${
           isDarkMode
             ? 'bg-gradient-to-r from-indigo-950/40 via-[#181826] to-[#12121c] border-[#8338ec]/35'

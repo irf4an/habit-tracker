@@ -605,138 +605,62 @@ export function App() {
   });
 
   return (
-    <div className={`min-h-[100dvh] flex flex-col transition-colors duration-200 ${
-      isDarkMode
-        ? 'bg-[#0b0b0e] text-zinc-100 selection:bg-indigo-600 selection:text-white'
-        : 'bg-[#fbfbfe] text-zinc-900 selection:bg-indigo-500 selection:text-white'
-    }`}>
-      {/* Hidden file input for backup imports */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        accept=".json"
-        className="hidden"
-      />
-
-      {/* FIXED TOP NAVIGATION BAR */}
-      <header className={`sticky top-0 z-40 w-full backdrop-blur-md border-b transition-colors ${
-        isDarkMode
-          ? 'bg-[#0b0b0e]/90 border-[#1c1c26]'
-          : 'bg-[#fbfbfe]/90 border-zinc-200'
-      }`}>
+    <div className={`min-h-[100dvh] flex flex-col transition-colors duration-200 ${isDarkMode ? 'bg-[#0b0b0e] text-zinc-100 selection:bg-indigo-600 selection:text-white' : 'bg-[#fbfbfe] text-zinc-900 selection:bg-indigo-500 selection:text-white'}`}>
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-[#8338ec] text-white px-3 py-1.5 rounded-lg text-sm z-[100]">Lompat ke konten</a>
+      <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" aria-hidden />
+      <header className={`sticky top-0 z-40 w-full backdrop-blur-md border-b transition-colors ${isDarkMode ? 'bg-[#0b0b0e]/90 border-[#1c1c26]' : 'bg-[#fbfbfe]/90 border-zinc-200'}`}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
-          {/* Left: Help & Badges */}
           <div className="flex items-center gap-2">
             <button
+              type="button"
+              aria-label="Buka panduan shortcut"
               onClick={() => setShowHelp(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer shadow-sm ${
-                isDarkMode
-                  ? 'bg-[#161620] hover:bg-[#20202c] text-zinc-300 hover:text-white border-[#282838]'
-                  : 'bg-white hover:bg-zinc-100 text-zinc-700 hover:text-zinc-900 border-zinc-300'
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#161620] hover:bg-[#20202c] text-zinc-300 hover:text-white border-[#282838]' : 'bg-white hover:bg-zinc-100 text-zinc-700 hover:text-zinc-900 border-zinc-300'}`}
             >
-              <HelpCircle className="w-3.5 h-3.5" />
+              <HelpCircle className="w-3.5 h-3.5" aria-hidden />
               <span className="hidden sm:inline">Panduan</span>
               <span className="sm:hidden">Help</span>
             </button>
 
             <button
+              type="button"
+              aria-label={`Pencapaian level ${level}, ${unlockedCount} dari ${totalCount} lencana terbuka`}
               onClick={() => setShowAchievements(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer shadow-sm ${
-                isDarkMode
-                  ? 'bg-gradient-to-r from-amber-500/10 to-indigo-500/10 hover:from-amber-500/20 hover:to-indigo-500/20 text-amber-300 hover:text-amber-200 border-amber-500/30'
-                  : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300'
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-gradient-to-r from-amber-500/10 to-indigo-500/10 hover:from-amber-500/20 hover:to-indigo-500/20 text-amber-300 hover:text-amber-200 border-amber-500/30' : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300'}`}
             >
-              <span>🏆</span>
+              <span aria-hidden>🏆</span>
               <span>Lv.{level}</span>
-              <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full border ${
-                isDarkMode ? 'text-zinc-400 bg-[#161622] border-amber-500/20' : 'text-amber-900 bg-amber-100 border-amber-300'
-              }`}>
+              <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full border ${isDarkMode ? 'text-zinc-400 bg-[#161622] border-amber-500/20' : 'text-amber-900 bg-amber-100 border-amber-300'}`}>
                 {unlockedCount}/{totalCount}
               </span>
             </button>
           </div>
-
-          {/* Center Tabs: [Calendar] [Statistics] [Manage] (Hidden on mobile < sm, use MobileBottomNav instead) */}
-          <div
-            className={`hidden sm:flex items-center p-1 rounded-full border shadow-inner ${
-              isDarkMode ? 'bg-[#14141d] border-[#8338ec]/35' : 'bg-zinc-100 border-[#8338ec]/25'
-            }`}
-            style={{
-              boxShadow: `0 0 16px rgba(131, 56, 236, 0.12)`,
-            }}
-          >
-            <button
-              onClick={() => setActiveTab('calendar')}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'calendar'
-                  ? 'bg-white text-zinc-950 font-semibold shadow-md'
-                  : isDarkMode ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-500 hover:text-zinc-900'
-              }`}
-            >
-              <CalendarIcon className="w-3.5 h-3.5" />
+          <nav aria-label="Navigasi utama" className={`hidden sm:flex items-center p-1 rounded-full border shadow-inner ${isDarkMode ? 'bg-[#14141d] border-[#8338ec]/35' : 'bg-zinc-100 border-[#8338ec]/25'}`} style={{ boxShadow: `0 0 16px rgba(131,56,236,0.12)` }}>
+            <button type="button" aria-current={activeTab === 'calendar' ? 'page' : undefined} onClick={() => setActiveTab('calendar')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${activeTab === 'calendar' ? 'bg-white text-zinc-950 font-semibold shadow-md' : isDarkMode ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-500 hover:text-zinc-900'}`}>
+              <CalendarIcon className="w-3.5 h-3.5" aria-hidden />
               Calendar
             </button>
-
-            <button
-              onClick={() => setActiveTab('statistics')}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'statistics'
-                  ? 'bg-white text-zinc-950 font-semibold shadow-md'
-                  : isDarkMode ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-500 hover:text-zinc-900'
-              }`}
-            >
-              <BarChart3 className="w-3.5 h-3.5" />
+            <button type="button" aria-current={activeTab === 'statistics' ? 'page' : undefined} onClick={() => setActiveTab('statistics')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${activeTab === 'statistics' ? 'bg-white text-zinc-950 font-semibold shadow-md' : isDarkMode ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-500 hover:text-zinc-900'}`}>
+              <BarChart3 className="w-3.5 h-3.5" aria-hidden />
               Statistics
             </button>
-
-            <button
-              onClick={() => setActiveTab('manage')}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'manage'
-                  ? 'bg-white text-zinc-950 font-semibold shadow-md'
-                  : isDarkMode ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-500 hover:text-zinc-900'
-              }`}
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
+            <button type="button" aria-current={activeTab === 'manage' ? 'page' : undefined} onClick={() => setActiveTab('manage')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${activeTab === 'manage' ? 'bg-white text-zinc-950 font-semibold shadow-md' : isDarkMode ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-500 hover:text-zinc-900'}`}>
+              <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden />
               Manage
             </button>
-          </div>
-
-          {/* Right Controls: Only Switch Theme & Profile Avatar */}
+          </nav>
           <div className="flex items-center gap-2">
-            <button
-              onClick={toggleTheme}
-              title={isDarkMode ? 'Switch to Light mode' : 'Switch to Dark mode'}
-              className={`p-2 rounded-full border transition-all cursor-pointer ${
-                isDarkMode
-                  ? 'bg-[#161620] hover:bg-[#20202c] text-amber-300 border-[#282838]'
-                  : 'bg-white hover:bg-zinc-100 text-indigo-600 border-zinc-300 shadow-sm'
-              }`}
-            >
-              {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            <button type="button" aria-label={isDarkMode ? 'Ganti ke mode terang' : 'Ganti ke mode gelap'} onClick={toggleTheme} title={isDarkMode ? 'Switch to Light mode' : 'Switch to Dark mode'} className={`p-2 rounded-full border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#161620] hover:bg-[#20202c] text-amber-300 border-[#282838]' : 'bg-white hover:bg-zinc-100 text-indigo-600 border-zinc-300 shadow-sm'}`}>
+              {isDarkMode ? <Sun className="w-4 h-4" aria-hidden /> : <Moon className="w-4 h-4" aria-hidden />}
             </button>
-
-            {/* Profile Avatar Button */}
-            <button
-              onClick={() => setShowProfile(true)}
-              className={`w-9 h-9 rounded-full flex items-center justify-center border cursor-pointer select-none transition-transform active:scale-95 text-base ${
-                isDarkMode
-                  ? 'bg-[#1a1a28] border-[#8338ec]/40 shadow-sm shadow-[#8338ec]/20'
-                  : 'bg-indigo-50 border-indigo-200'
-              }`}
-              title="Profil Pengguna"
-            >
-              {userProfile.avatarEmoji}
+            <button type="button" aria-label={`Profil ${userProfile.name}, level ${level}`} onClick={() => setShowProfile(true)} className={`w-9 h-9 rounded-full flex items-center justify-center border cursor-pointer select-none transition-transform active:scale-95 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#1a1a28] border-[#8338ec]/40 shadow-sm shadow-[#8338ec]/20' : 'bg-indigo-50 border-indigo-200'}`} title="Profil Pengguna">
+              <span aria-hidden>{userProfile.avatarEmoji}</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 pb-24 sm:pb-10">
+      <main id="main-content" tabIndex={-1} className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 pb-24 sm:pb-10 outline-none">
         {/* Category Filter & Full View Toggle Bar */}
         {activeTab === 'calendar' && (
           <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">

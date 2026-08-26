@@ -108,13 +108,26 @@ export const HabitModal: React.FC<HabitModalProps> = ({
     onClose();
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [isOpen, onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150"
+      role="dialog"
+      aria-modal="true"
+      aria-label={initialHabit ? 'Ubah kebiasaan' : 'Buat kebiasaan baru'}
+      onClick={onClose}
+    >
       <div
+        role="document"
+        onClick={(e) => e.stopPropagation()}
         className={`border rounded-2xl w-full max-w-lg p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto ${
-          isDarkMode
-            ? 'bg-[#14141c] border-[#8338ec]/35 text-white'
-            : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'
+          isDarkMode ? 'bg-[#14141c] border-[#8338ec]/35 text-white' : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'
         }`}
         style={{
           boxShadow: isDarkMode ? `0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(131,56,236,0.18)` : `0 20px 50px rgba(0,0,0,0.15)`,
@@ -130,34 +143,19 @@ export const HabitModal: React.FC<HabitModalProps> = ({
             </p>
           </div>
           <button
+            type="button"
+            aria-label="Tutup dialog"
             onClick={onClose}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-              isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#20202c]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'
-            }`}
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#20202c]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'}`}
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Habit Name */}
           <div>
-            <label className={`block text-xs font-mono uppercase tracking-wider mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-              Habit Title
-            </label>
-            <input
-              type="text"
-              required
-              autoFocus
-              placeholder="e.g. Gym Workout, Read Books, Drink Water"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className={`w-full border rounded-xl px-4 py-2.5 transition-colors text-sm font-medium focus:outline-none focus:border-[#8338ec] ${
-                isDarkMode
-                  ? 'bg-[#0c0c11] border-[#262638] text-white placeholder-zinc-600'
-                  : 'bg-zinc-50 border-zinc-300 text-zinc-900 placeholder-zinc-400'
-              }`}
-            />
+            <label htmlFor="habit-title" className={`block text-xs font-mono uppercase tracking-wider mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Judul kebiasaan</label>
+            <input id="habit-title" type="text" required autoFocus placeholder="Mis. Olahraga pagi, Baca buku" value={name} onChange={(e) => setName(e.target.value)} className={`w-full border rounded-xl px-4 py-2.5 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0c0c11] border-[#262638] text-white placeholder-zinc-600' : 'bg-zinc-50 border-zinc-300 text-zinc-900 placeholder-zinc-400'}`} />
           </div>
 
           {/* Habit Type & Target (Boolean vs Numeric) */}
@@ -206,32 +204,12 @@ export const HabitModal: React.FC<HabitModalProps> = ({
           {habitType === 'numeric' && (
             <div className={`grid grid-cols-2 gap-3 p-3 rounded-xl border animate-in fade-in ${isDarkMode ? 'bg-[#111119] border-[#252538]' : 'bg-zinc-50 border-zinc-200'}`}>
               <div>
-                <label className={`block text-[11px] font-mono mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                  Target Daily Goal
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  value={targetValue}
-                  onChange={(e) => setTargetValue(Math.max(1, parseInt(e.target.value) || 1))}
-                  className={`w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#8338ec] ${
-                    isDarkMode ? 'bg-[#0a0a0f] border-[#28283c] text-white' : 'bg-white border-zinc-300 text-zinc-900'
-                  }`}
-                />
+                <label htmlFor="habit-target" className={`block text-[11px] font-mono mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Target harian</label>
+                <input id="habit-target" type="number" inputMode="numeric" min={1} value={targetValue} onChange={(e) => setTargetValue(Math.max(1, parseInt(e.target.value) || 1))} className={`w-full border rounded-lg px-3 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0a0a0f] border-[#28283c] text-white' : 'bg-white border-zinc-300 text-zinc-900'}`} />
               </div>
               <div>
-                <label className={`block text-[11px] font-mono mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                  Unit Label
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. pages, mins, ml, km"
-                  value={unit}
-                  onChange={(e) => setUnit(e.target.value)}
-                  className={`w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#8338ec] ${
-                    isDarkMode ? 'bg-[#0a0a0f] border-[#28283c] text-white' : 'bg-white border-zinc-300 text-zinc-900'
-                  }`}
-                />
+                <label htmlFor="habit-unit" className={`block text-[11px] font-mono mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Satuan</label>
+                <input id="habit-unit" type="text" placeholder="halaman, menit, ml, km" value={unit} onChange={(e) => setUnit(e.target.value)} className={`w-full border rounded-lg px-3 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0a0a0f] border-[#28283c] text-white' : 'bg-white border-zinc-300 text-zinc-900'}`} />
               </div>
             </div>
           )}
@@ -291,15 +269,12 @@ export const HabitModal: React.FC<HabitModalProps> = ({
           {/* Category & Color */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={`block text-xs font-mono uppercase tracking-wider mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                Category
-              </label>
+              <label htmlFor="habit-category" className={`block text-xs font-mono uppercase tracking-wider mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Kategori</label>
               <select
+                id="habit-category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className={`w-full border rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-[#8338ec] ${
-                  isDarkMode ? 'bg-[#0c0c11] border-[#262638] text-white' : 'bg-white border-zinc-300 text-zinc-900'
-                }`}
+                className={`w-full border rounded-xl px-3 py-2 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0c0c11] border-[#262638] text-white' : 'bg-white border-zinc-300 text-zinc-900'}`}
               >
                 {PRESET_CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>

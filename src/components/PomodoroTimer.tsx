@@ -155,15 +155,19 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
     );
   }
 
+  React.useEffect(() => {
+    if (!session) return;
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onUpdateSession(null); };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [session, onUpdateSession]);
   // FULL FOCUS MODAL
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in" role="dialog" aria-modal="true" aria-label={`Timer fokus untuk ${session.habit.name}`} onClick={() => onUpdateSession(null)}>
       <div
-        className={`border rounded-3xl max-w-md w-full p-7 shadow-2xl relative overflow-hidden text-center ${
-          isDarkMode
-            ? 'bg-[#12121a] border-[#8338ec]/35 text-white'
-            : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'
-        }`}
+        role="document"
+        onClick={(e) => e.stopPropagation()}
+        className={`border rounded-3xl max-w-md w-full p-7 shadow-2xl relative overflow-hidden text-center ${isDarkMode ? 'bg-[#12121a] border-[#8338ec]/35 text-white' : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'}`}
         style={{
           boxShadow: isDarkMode
             ? `0 20px 60px rgba(0,0,0,0.8), 0 0 50px ${session.habit.color}20`
@@ -180,43 +184,17 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
           </div>
 
           <div className="flex items-center gap-1">
-            <button
-              onClick={() => setIsMinimized(true)}
-              className={`p-1.5 rounded-lg cursor-pointer transition-colors ${
-                isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#1f1f2e]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'
-              }`}
-              title="Minimize to floating widget"
-            >
-              <Minimize2 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => onUpdateSession(null)}
-              className={`p-1.5 rounded-lg cursor-pointer transition-colors ${
-                isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#1f1f2e]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'
-              }`}
-              title="Close timer"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <button type="button" aria-label="Minimize timer" onClick={() => setIsMinimized(true)} className={`p-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#1f1f2e]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'}`} title="Minimize to floating widget"><Minimize2 className="w-4 h-4" aria-hidden /></button>
+            <button type="button" aria-label="Tutup timer" onClick={() => onUpdateSession(null)} className={`p-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#1f1f2e]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'}`} title="Close timer"><X className="w-4 h-4" aria-hidden /></button>
           </div>
         </div>
-
-        {/* Habit Identity */}
         <div className="my-5">
-          <span className="text-4xl inline-block mb-2 select-none animate-bounce">
-            {session.habit.emoji}
-          </span>
+          <span className="text-4xl inline-block mb-2 select-none animate-bounce" aria-hidden>{session.habit.emoji}</span>
           <h2 className={`text-2xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{session.habit.name}</h2>
-          <p className={`text-xs font-mono mt-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
-            Sedang berfokus menyelesaikan daily routine...
-          </p>
+          <p className={`text-xs font-mono mt-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>Sedang berfokus — timer berjalan</p>
         </div>
-
-        {/* Circular / Big Timer Display */}
         <div className="relative my-8 flex flex-col items-center justify-center">
-          <div className={`text-7xl font-extrabold font-mono tracking-tighter ${isDarkMode ? 'text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.15)]' : 'text-zinc-900'}`}>
-            {timeFormatted}
-          </div>
+          <div aria-live="polite" aria-atomic="true" className={`text-7xl font-extrabold font-mono tracking-tighter ${isDarkMode ? 'text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.15)]' : 'text-zinc-900'}`}>{timeFormatted}</div>
 
           {/* Progress bar */}
           <div className={`w-56 h-2 rounded-full overflow-hidden mt-6 ${isDarkMode ? 'bg-[#1b1b26]' : 'bg-zinc-200'}`}>
@@ -252,44 +230,11 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
 
         {/* Main Action Buttons */}
         <div className="flex items-center justify-center gap-3">
-          <button
-            onClick={resetTimer}
-            className={`p-3 rounded-2xl cursor-pointer border transition-all ${
-              isDarkMode ? 'bg-[#181824] hover:bg-[#222232] text-zinc-400 hover:text-white border-[#2a2a3c]' : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-600 border-zinc-300'
-            }`}
-            title="Reset timer"
-          >
-            <RotateCcw className="w-5 h-5" />
+          <button type="button" aria-label="Reset timer" onClick={resetTimer} className={`p-3 rounded-2xl cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#181824] hover:bg-[#222232] text-zinc-400 hover:text-white border-[#2a2a3c]' : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-600 border-zinc-300'}`} title="Reset timer"><RotateCcw className="w-5 h-5" aria-hidden /></button>
+          <button type="button" aria-label={session.isRunning ? 'Jeda timer' : 'Mulai fokus'} onClick={togglePlayPause} className={`flex items-center gap-2 px-8 py-3.5 rounded-2xl text-sm font-bold shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] focus-visible:ring-offset-2 ${isDarkMode ? 'bg-white text-zinc-950 hover:bg-zinc-200 active:scale-95' : 'bg-[#8338ec] text-white hover:bg-[#722ed1] active:scale-95 shadow-[#8338ec]/30'}`}>
+            {session.isRunning ? <><Pause className="w-5 h-5 fill-current" aria-hidden /> Jeda</> : <><Play className="w-5 h-5 fill-current" aria-hidden /> Mulai</>}
           </button>
-
-          <button
-            onClick={togglePlayPause}
-            className={`flex items-center gap-2 px-8 py-3.5 rounded-2xl text-sm font-bold shadow-xl transition-all cursor-pointer ${
-              isDarkMode
-                ? 'bg-white text-zinc-950 hover:bg-zinc-200 active:scale-95'
-                : 'bg-[#8338ec] text-white hover:bg-[#722ed1] active:scale-95 shadow-[#8338ec]/30'
-            }`}
-          >
-            {session.isRunning ? (
-              <>
-                <Pause className="w-5 h-5 fill-current" />
-                Pause
-              </>
-            ) : (
-              <>
-                <Play className="w-5 h-5 fill-current" />
-                Start Focus
-              </>
-            )}
-          </button>
-
-          <button
-            onClick={finishEarly}
-            className="p-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 rounded-2xl cursor-pointer border border-emerald-500/30 transition-all"
-            title="Mark completed early"
-          >
-            <Check className="w-5 h-5 stroke-[2.5]" />
-          </button>
+          <button type="button" aria-label="Selesaikan lebih awal dan tandai habit selesai" onClick={finishEarly} className="p-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 rounded-2xl cursor-pointer border border-emerald-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" title="Selesaikan lebih awal"><Check className="w-5 h-5 stroke-[2.5]" aria-hidden /></button>
         </div>
       </div>
     </div>

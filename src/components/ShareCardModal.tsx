@@ -100,9 +100,14 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ habit, onClose, 
     }
   };
 
+  React.useEffect(() => {
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [onClose]);
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
-      <div className="max-w-md w-full space-y-4">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in" role="dialog" aria-modal="true" aria-label={`Bagikan streak ${habit.name}`} onClick={onClose}>
+      <div className="max-w-md w-full space-y-4" role="document" onClick={(e) => e.stopPropagation()}>
         {/* THE SHAREABLE CARD */}
         <div
           ref={cardRef}
@@ -232,51 +237,19 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ habit, onClose, 
           </div>
         </div>
 
-        {/* Action Buttons Toolbar */}
         <div className="flex items-center gap-2.5 justify-center flex-wrap">
-          <button
-            onClick={exportAsPng}
-            disabled={isExporting}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-md ${
-              isDarkMode
-                ? 'bg-white text-zinc-900 hover:bg-zinc-200'
-                : 'bg-zinc-900 text-white hover:bg-zinc-800'
-            }`}
-          >
-            <Download className="w-4 h-4" />
+          <button type="button" aria-label="Download kartu streak sebagai PNG" onClick={exportAsPng} disabled={isExporting} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-white text-zinc-900 hover:bg-zinc-200' : 'bg-zinc-900 text-white hover:bg-zinc-800'}`}>
+            <Download className="w-4 h-4" aria-hidden />
             {isExporting ? 'Memproses...' : 'Download PNG'}
           </button>
-
-          <button
-            onClick={shareNative}
-            disabled={isExporting}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#8338ec] hover:bg-[#722ed1] text-white rounded-xl text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-md shadow-[#8338ec]/25"
-          >
-            <Share2 className="w-4 h-4" />
-            Bagikan
+          <button type="button" aria-label="Bagikan kartu streak" onClick={shareNative} disabled={isExporting} className="flex items-center gap-2 px-4 py-2.5 bg-[#8338ec] hover:bg-[#722ed1] text-white rounded-xl text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-md shadow-[#8338ec]/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec]">
+            <Share2 className="w-4 h-4" aria-hidden /> Bagikan
           </button>
-
-          <button
-            onClick={copyToClipboard}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
-              isDarkMode
-                ? 'bg-[#1a1a26] hover:bg-[#242434] border-[#2e2e40] text-zinc-300 hover:text-white'
-                : 'bg-white hover:bg-zinc-100 border-zinc-300 text-zinc-700 hover:text-zinc-900 shadow-sm'
-            }`}
-          >
-            <Copy className="w-4 h-4" />
-            Salin Gambar
+          <button type="button" aria-label="Salin gambar ke clipboard" onClick={copyToClipboard} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#1a1a26] hover:bg-[#242434] border-[#2e2e40] text-zinc-300 hover:text-white' : 'bg-white hover:bg-zinc-100 border-zinc-300 text-zinc-700 hover:text-zinc-900 shadow-sm'}`}>
+            <Copy className="w-4 h-4" aria-hidden /> Salin Gambar
           </button>
-
-          <button
-            onClick={onClose}
-            className={`p-2.5 rounded-xl transition-colors cursor-pointer border ${
-              isDarkMode
-                ? 'bg-[#1a1a26] hover:bg-[#242434] border-[#2e2e40] text-zinc-400 hover:text-white'
-                : 'bg-white hover:bg-zinc-100 border-zinc-300 text-zinc-500 hover:text-zinc-900 shadow-sm'
-            }`}
-          >
-            <X className="w-4 h-4" />
+          <button type="button" aria-label="Tutup dialog bagikan" onClick={onClose} className={`p-2.5 rounded-xl transition-colors cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#1a1a26] hover:bg-[#242434] border-[#2e2e40] text-zinc-400 hover:text-white' : 'bg-white hover:bg-zinc-100 border-zinc-300 text-zinc-500 hover:text-zinc-900 shadow-sm'}`}>
+            <X className="w-4 h-4" aria-hidden />
           </button>
         </div>
       </div>

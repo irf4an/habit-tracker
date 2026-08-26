@@ -32,6 +32,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [bio, setBio] = useState(profile.bio);
   const [avatarEmoji, setAvatarEmoji] = useState(profile.avatarEmoji);
 
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [isOpen, onClose]);
   if (!isOpen) return null;
 
   const { level, levelTitle, totalXp, unlockedCount, totalCount } = calculateBadges(habits);
@@ -54,13 +60,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in" role="dialog" aria-modal="true" aria-label="Profil pengguna" onClick={onClose}>
       <div
-        className={`border rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative max-h-[90vh] overflow-y-auto ${
-          isDarkMode
-            ? 'bg-[#12121a] border-[#8338ec]/35 text-white'
-            : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'
-        }`}
+        role="document"
+        onClick={(e) => e.stopPropagation()}
+        className={`border rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative max-h-[90vh] overflow-y-auto ${isDarkMode ? 'bg-[#12121a] border-[#8338ec]/35 text-white' : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'}`}
         style={{
           boxShadow: isDarkMode
             ? `0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(131,56,236,0.18)`
@@ -78,90 +82,35 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
           <div className="flex items-center gap-2">
             {!isEditing && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className={`p-1.5 rounded-lg border transition-colors cursor-pointer text-xs flex items-center gap-1 ${
-                  isDarkMode
-                    ? 'bg-[#181824] border-[#2b2b3b] text-zinc-300 hover:text-white'
-                    : 'bg-zinc-100 border-zinc-300 text-zinc-700 hover:text-zinc-900'
-                }`}
-                title="Edit Profil"
-              >
-                <Edit2 className="w-3.5 h-3.5" />
+              <button type="button" aria-label="Ubah profil" onClick={() => setIsEditing(true)} className={`p-1.5 rounded-lg border transition-colors cursor-pointer text-xs flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#181824] border-[#2b2b3b] text-zinc-300 hover:text-white' : 'bg-zinc-100 border-zinc-300 text-zinc-700 hover:text-zinc-900'}`}>
+                <Edit2 className="w-3.5 h-3.5" aria-hidden />
                 <span>Ubah</span>
               </button>
             )}
-            <button
-              onClick={onClose}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#1e1e2c]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'
-              }`}
-            >
-              <X className="w-5 h-5" />
+            <button type="button" aria-label="Tutup profil" onClick={onClose} className={`p-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#1e1e2c]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'}`}>
+              <X className="w-5 h-5" aria-hidden />
             </button>
           </div>
         </div>
 
-        {/* Profile Card Preview or Edit Form */}
         {isEditing ? (
           <form onSubmit={handleSave} className="space-y-4 animate-in fade-in">
-            {/* Avatar Selector */}
-            <div>
-              <label className={`block text-xs font-mono uppercase mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                Pilih Avatar Emoji
-              </label>
-              <div className="flex items-center gap-2 flex-wrap mb-2">
+            <fieldset className="contents">
+              <legend className="sr-only">Pilih avatar</legend>
+              <p id="profile-avatar-help" className={`text-xs ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>Pilih emoji avatar</p>
+              <div role="radiogroup" aria-labelledby="profile-avatar-help" className="flex items-center gap-2 flex-wrap">
                 {PRESET_AVATARS.map((av) => (
-                  <button
-                    type="button"
-                    key={av}
-                    onClick={() => setAvatarEmoji(av)}
-                    className={`w-9 h-9 text-lg rounded-xl flex items-center justify-center transition-all cursor-pointer ${
-                      avatarEmoji === av
-                        ? 'bg-[#8338ec]/20 border-2 border-[#8338ec] scale-110'
-                        : isDarkMode
-                        ? 'bg-[#1a1a24] border border-[#262636] hover:bg-[#252535]'
-                        : 'bg-zinc-100 border border-zinc-300 hover:bg-zinc-200'
-                    }`}
-                  >
-                    {av}
-                  </button>
+                  <button type="button" role="radio" aria-checked={avatarEmoji === av} aria-label={`Avatar ${av}`} key={av} onClick={() => setAvatarEmoji(av)} className={`w-9 h-9 text-lg rounded-xl flex items-center justify-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${avatarEmoji === av ? 'bg-[#8338ec]/20 border-2 border-[#8338ec] scale-110' : isDarkMode ? 'bg-[#1a1a24] border border-[#262636] hover:bg-[#252535]' : 'bg-zinc-100 border border-zinc-300 hover:bg-zinc-200'}`}>{av}</button>
                 ))}
               </div>
-            </div>
-
+            </fieldset>
             <div>
-              <label className={`block text-xs font-mono uppercase mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                Nama Panggilan
-              </label>
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={`w-full border rounded-xl px-3.5 py-2 text-sm font-medium focus:outline-none focus:border-[#8338ec] ${
-                  isDarkMode
-                    ? 'bg-[#0c0c11] border-[#262638] text-white'
-                    : 'bg-zinc-50 border-zinc-300 text-zinc-900'
-                }`}
-              />
+              <label htmlFor="profile-name" className={`block text-xs font-mono uppercase mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Nama panggilan</label>
+              <input id="profile-name" type="text" required value={name} onChange={(e) => setName(e.target.value)} className={`w-full border rounded-xl px-3.5 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0c0c11] border-[#262638] text-white' : 'bg-zinc-50 border-zinc-300 text-zinc-900'}`} />
             </div>
-
             <div>
-              <label className={`block text-xs font-mono uppercase mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                Bio / Motto
-              </label>
-              <input
-                type="text"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="e.g. 1% better every day"
-                className={`w-full border rounded-xl px-3.5 py-2 text-sm font-medium focus:outline-none focus:border-[#8338ec] ${
-                  isDarkMode
-                    ? 'bg-[#0c0c11] border-[#262638] text-white'
-                    : 'bg-zinc-50 border-zinc-300 text-zinc-900'
-                }`}
-              />
+              <label htmlFor="profile-bio" className={`block text-xs font-mono uppercase mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Bio / motto</label>
+              <input id="profile-bio" type="text" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Mis. 1% lebih baik setiap hari" className={`w-full border rounded-xl px-3.5 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0c0c11] border-[#262638] text-white' : 'bg-zinc-50 border-zinc-300 text-zinc-900'}`} />
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2">
@@ -229,38 +178,21 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               </div>
             </div>
 
-            {/* Cloud Sync Status Banner */}
-            <div
-              onClick={() => {
-                onClose();
-                onOpenAuth();
-              }}
-              className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
-                userEmail
-                  ? 'bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/50'
-                  : 'bg-indigo-500/10 border-indigo-500/30 hover:border-indigo-500/50'
-              }`}
+            <button
+              type="button"
+              onClick={() => { onClose(); onOpenAuth(); }}
+              aria-label={userEmail ? `Cloud aktif ${userEmail}, kelola akun` : 'Sambungkan Cloud Sync'}
+              className={`w-full text-left p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${userEmail ? 'bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/50' : 'bg-indigo-500/10 border-indigo-500/30 hover:border-indigo-500/50'}`}
             >
-              <div className="flex items-center gap-2.5">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-                  userEmail ? 'bg-emerald-500 text-white' : 'bg-indigo-600 text-white'
-                }`}>
-                  <Cloud className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className={`font-bold text-xs ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
-                    {userEmail ? 'Cloud Sync Aktif' : 'Sambungkan Cloud Sync'}
-                  </h4>
-                  <p className={`text-[10.5px] ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                    {userEmail ? userEmail : 'Sinkronkan data ke HP & laptop lain'}
-                  </p>
-                </div>
-              </div>
-
-              <span className={`text-[11px] font-bold ${userEmail ? 'text-emerald-500' : 'text-indigo-500'}`}>
-                {userEmail ? 'Kelola' : 'Masuk →'}
+              <span className="flex items-center gap-2.5">
+                <span className={`w-8 h-8 rounded-xl flex items-center justify-center ${userEmail ? 'bg-emerald-500 text-white' : 'bg-indigo-600 text-white'}`}><Cloud className="w-4 h-4" aria-hidden /></span>
+                <span>
+                  <span className={`font-bold text-xs block ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{userEmail ? 'Cloud Sync Aktif' : 'Sambungkan Cloud Sync'}</span>
+                  <span className={`text-[10.5px] ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>{userEmail ? userEmail : 'Sinkronkan data ke HP & laptop lain'}</span>
+                </span>
               </span>
-            </div>
+              <span className={`text-[11px] font-bold ${userEmail ? 'text-emerald-500' : 'text-indigo-500'}`}>{userEmail ? 'Kelola' : 'Masuk →'}</span>
+            </button>
 
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 gap-3 font-mono">

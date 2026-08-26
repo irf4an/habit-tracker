@@ -235,33 +235,30 @@ export const StatsView: React.FC<StatsViewProps> = ({ habits, isDarkMode = true 
           </h3>
           <span className={`text-[10.5px] font-light tracking-wide font-mono ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>90 Hari Terakhir</span>
         </div>
-        <div className="grid grid-cols-7 gap-2 sm:gap-4 text-center font-mono pt-1">
+        <div className="grid grid-cols-7 gap-2 sm:gap-4 text-center font-mono pt-1" role="img" aria-label={`Konsistensi per hari: ${dayOfWeekPerformance.map((d) => `${d.name} ${d.percent}%`).join(', ')}`}>
           {dayOfWeekPerformance.map((day, idx) => (
             <div key={day.name} className="flex flex-col items-center gap-2 group">
-              <span className={`text-[10px] sm:text-xs font-semibold ${day.percent > 75 ? 'text-emerald-500' : isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
+              <span className={`text-[10px] sm:text-xs font-semibold ${day.percent > 75 ? 'text-emerald-600' : isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`} aria-hidden>
                 {day.percent}%
               </span>
-              <div className={`w-full h-24 sm:h-32 rounded-2xl flex items-end justify-center p-1.5 overflow-hidden ${isDarkMode ? 'bg-[#181824] group-hover:bg-[#1f1f2e]' : 'bg-zinc-100 group-hover:bg-zinc-200'} transition-colors`}>
+              <div className={`w-full h-24 sm:h-32 rounded-2xl flex items-end justify-center p-1.5 overflow-hidden ${isDarkMode ? 'bg-[#181824] group-hover:bg-[#1f1f2e]' : 'bg-zinc-100 group-hover:bg-zinc-200'} transition-colors`} aria-hidden>
                 <motion.div
                   className="w-full rounded-xl will-change-transform"
                   initial={reduceMotion ? false : { height: '10%' }}
                   whileInView={reduceMotion ? undefined : { height: `${Math.max(10, day.percent)}%` }}
                   viewport={{ once: true, amount: 0.4 }}
-                  transition={
-                    reduceMotion
-                      ? undefined
-                      : { duration: 0.7, delay: idx * 0.06, ease: [0.16, 1, 0.3, 1] as const }
-                  }
+                  transition={reduceMotion ? undefined : { duration: 0.7, delay: idx * 0.06, ease: [0.16, 1, 0.3, 1] as const }}
                   style={{
                     backgroundColor: day.percent > 75 ? '#10b981' : '#8338ec',
                     boxShadow: day.percent > 75 ? '0 0 12px rgba(16,185,129,0.3)' : '0 0 12px rgba(131,56,236,0.2)',
                   }}
                 />
               </div>
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center" aria-hidden>
                 <span className={`text-[11px] sm:text-xs font-bold ${isDarkMode ? 'text-zinc-200' : 'text-zinc-800'}`}>{day.name}</span>
                 <span className={`text-[10px] mt-0.5 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>{day.count}x</span>
               </div>
+              <span className="sr-only">{day.name}: {day.percent}% — {day.count} selesai</span>
             </div>
           ))}
         </div>
@@ -278,20 +275,19 @@ export const StatsView: React.FC<StatsViewProps> = ({ habits, isDarkMode = true 
           </h3>
           <span className={`text-[10.5px] font-light tracking-wide font-mono ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>Urut Streak</span>
         </div>
-        <motion.div
-          className="space-y-2"
-          initial={reduceMotion ? undefined : 'hidden'}
-          whileInView={reduceMotion ? undefined : 'visible'}
-          viewport={reduceMotion ? undefined : { once: true, amount: 0.15 }}
-          variants={reduceMotion ? undefined : { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
-        >
+        <div role="list" aria-label="Peringkat kebiasaan — urut streak tertinggi" className="space-y-2">
           {stats
             .sort((a, b) => b.currentStreak - a.currentStreak)
             .map(({ habit, currentStreak, bestStreak, completionRate, totalCompleted }, rank) => (
               <motion.div
                 key={habit.id}
-                variants={reduceMotion ? undefined : { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const } } }}
-                className={`p-3 rounded-xl border flex items-center justify-between gap-3 will-change-transform ${isDarkMode ? 'bg-[#0f0f15] border-[#1e1e28] hover:border-[#8338ec]/40' : 'bg-zinc-50 border-zinc-200 hover:border-zinc-300'}`}
+                role="listitem"
+                aria-label={`${rank + 1}. ${habit.name} — ${currentStreak} hari beruntun, ${completionRate}% 30 hari`}
+                initial={reduceMotion ? undefined : { opacity: 0, y: 10 }}
+                whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={reduceMotion ? undefined : { once: true, amount: 0.15 }}
+                transition={reduceMotion ? undefined : { duration: 0.4, delay: rank * 0.06, ease: [0.16, 1, 0.3, 1] as const }}
+                className={`p-3 rounded-xl border flex items-center justify-between gap-3 will-change-transform focus-within:ring-2 focus-within:ring-[#8338ec] ${isDarkMode ? 'bg-[#0f0f15] border-[#1e1e28] hover:border-[#8338ec]/40' : 'bg-zinc-50 border-zinc-200 hover:border-zinc-300'}`}
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold shrink-0 ${rank === 0 ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30' : isDarkMode ? 'bg-[#181824] text-zinc-400' : 'bg-zinc-200 text-zinc-600'}`}>
@@ -313,17 +309,10 @@ export const StatsView: React.FC<StatsViewProps> = ({ habits, isDarkMode = true 
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <div className="hidden sm:flex flex-col items-end w-20">
+                  <div className="hidden sm:flex flex-col items-end w-20" aria-hidden>
                     <span className={`text-[10px] font-mono font-medium ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>{completionRate}% (30h)</span>
                     <div className={`h-1.5 w-full rounded-full overflow-hidden mt-0.5 ${isDarkMode ? 'bg-[#1a1a24]' : 'bg-zinc-200'}`}>
-                      <motion.div
-                        className="h-full rounded-full"
-                        initial={reduceMotion ? false : { width: 0 }}
-                        whileInView={reduceMotion ? undefined : { width: `${completionRate}%` }}
-                        viewport={{ once: true }}
-                        transition={reduceMotion ? undefined : { duration: 0.8, delay: 0.2 + rank * 0.04, ease: [0.16, 1, 0.3, 1] as const }}
-                        style={{ backgroundColor: habit.color }}
-                      />
+                      <motion.div className="h-full rounded-full" initial={reduceMotion ? false : { width: 0 }} whileInView={reduceMotion ? undefined : { width: `${completionRate}%` }} viewport={{ once: true }} transition={reduceMotion ? undefined : { duration: 0.8, delay: 0.2 + rank * 0.04, ease: [0.16, 1, 0.3, 1] as const }} style={{ backgroundColor: habit.color }} />
                     </div>
                   </div>
                   <div className="px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold flex items-center gap-1 shrink-0" style={{ backgroundColor: `${habit.color}20`, color: habit.color }}>
@@ -333,7 +322,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ habits, isDarkMode = true 
                 </div>
               </motion.div>
             ))}
-        </motion.div>
+        </div>
       </motion.div>
     </div>
   );
