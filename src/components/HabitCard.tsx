@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Habit } from '../types';
 import { getTodayString, getYearDays, calculateStreak } from '../utils';
-import { Check, Trash2, Edit3, Flame, Hash, Calendar, FileText, Plus, Minus, Share2, Timer, Snowflake } from 'lucide-react';
+import { Check, Trash2, Edit3, Flame, Plus, Minus, Share2, Timer, Snowflake } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { playCheckSound, playUncheckSound } from '../sound';
 
@@ -50,14 +50,13 @@ export const HabitCard: React.FC<HabitCardProps> = ({
   const [noteText, setNoteText] = useState<string>('');
   const [cellVal, setCellVal] = useState<number>(0);
 
-  // Exact 310-320px width on mobile (19 weeks * 14.5px + day labels = ~305px)
+  // Exact 310-320px width on mobile (19 weeks)
   const numWeeks = isFullView ? 52 : 19;
   const { weeks, monthLabels } = useMemo(() => getYearDays(numWeeks), [numWeeks]);
 
   const handleCheckToday = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isNumeric) {
-      // If completed, reset to 0, otherwise set to targetVal
       const next = currentTodayVal >= targetVal ? 0 : targetVal;
       onToggleDate(habit.id, todayStr, next);
       if (next >= targetVal) {
@@ -90,12 +89,10 @@ export const HabitCard: React.FC<HabitCardProps> = ({
 
   const handleCellClick = (dateStr: string, e: React.MouseEvent) => {
     if (e.shiftKey || isNumeric) {
-      // Open note/detail editor popup
       setSelectedDate(dateStr);
       setNoteText(habit.notes?.[dateStr] || '');
       setCellVal(habit.history[dateStr] || 0);
     } else {
-      // Simple toggle
       const current = habit.history[dateStr] || 0;
       onToggleDate(habit.id, dateStr, current === 1 ? 0 : 1);
     }
@@ -110,14 +107,13 @@ export const HabitCard: React.FC<HabitCardProps> = ({
     setSelectedDate(null);
   };
 
-  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayLabels = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
-  // Frequency string helper
   const getFrequencyLabel = () => {
     if (!habit.frequency || habit.frequency === 'everyday') return null;
-    if (habit.frequency === 'weekdays') return 'Weekdays';
-    if (habit.frequency === 'weekends') return 'Weekends';
-    if (habit.frequency === 'weekly_target') return `${habit.weeklyTargetDays || 4}x/wk`;
+    if (habit.frequency === 'weekdays') return 'Hari Kerja';
+    if (habit.frequency === 'weekends') return 'Akhir Pekan';
+    if (habit.frequency === 'weekly_target') return `${habit.weeklyTargetDays || 4}x/mgg`;
     return null;
   };
 
@@ -125,7 +121,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
 
   return (
     <div
-      className={`transition-all rounded-2xl p-5 sm:p-6 mb-5 relative overflow-hidden group border ${
+      className={`transition-all rounded-2xl p-4 sm:p-5 mb-4 relative overflow-hidden group border ${
         isDarkMode
           ? 'bg-[#111116] border-[#8338ec]/35 hover:border-[#8338ec]/60'
           : 'bg-white border-[#8338ec]/25 hover:border-[#8338ec]/50'
@@ -136,170 +132,172 @@ export const HabitCard: React.FC<HabitCardProps> = ({
           : `0 8px 30px rgba(131, 56, 236, 0.08), 0 0 1px rgba(131, 56, 236, 0.25)`,
       }}
     >
-      {/* Top Header Row */}
-      <div className="flex items-center justify-between gap-4 mb-5 flex-wrap">
-        <div className="flex items-center gap-3.5">
-          {/* Check Circle Button */}
-          <button
-            onClick={handleCheckToday}
-            title={
-              isTodayCompleted
-                ? `Completed! (${currentTodayVal}/${targetVal} ${habit.unit || ''})`
-                : `Check in today (${currentTodayVal}/${targetVal} ${habit.unit || ''})`
-            }
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer border ${
-              isTodayCompleted
-                ? 'border-transparent text-white shadow-lg transform active:scale-95'
-                : isDarkMode
-                ? 'border-[#2e2e3d] bg-[#16161f] text-zinc-500 hover:border-zinc-400 hover:text-zinc-200'
-                : 'border-zinc-300 bg-zinc-100 text-zinc-400 hover:border-zinc-500 hover:text-zinc-700'
-            }`}
-            style={{
-              backgroundColor: isTodayCompleted ? habit.color : undefined,
-              boxShadow: isTodayCompleted ? `0 0 20px ${habit.color}66` : undefined,
-            }}
-          >
-            {isTodayCompleted ? (
-              <Check className="w-5 h-5 stroke-[2.8]" />
-            ) : isNumeric && currentTodayVal > 0 ? (
-              <span className={`text-[11px] font-mono font-bold ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
-                {currentTodayVal}
-              </span>
-            ) : (
-              <div className={`w-4 h-4 rounded-full border border-dashed group-hover:scale-110 transition-transform ${isDarkMode ? 'border-zinc-500' : 'border-zinc-400'}`} />
-            )}
-          </button>
-
-          {/* Emoji & Title */}
-          <div className="flex items-center gap-2.5">
-            <span className="text-2xl select-none" role="img" aria-label="habit icon">
-              {habit.emoji || '🎯'}
-            </span>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className={`font-semibold text-lg tracking-tight leading-snug ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
-                  {habit.name}
-                </h3>
-
-                {habit.category && (
-                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${isDarkMode ? 'text-zinc-400 bg-[#171722] border-[#262636]' : 'text-zinc-600 bg-zinc-100 border-zinc-200'}`}>
-                    {habit.category}
-                  </span>
-                )}
-
-                {freqLabel && (
-                  <span className="text-[10px] font-mono text-indigo-500 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-full">
-                    {freqLabel}
-                  </span>
-                )}
-              </div>
-
-              {/* Stats badges */}
-              <div className={`flex items-center gap-2.5 mt-0.5 text-xs font-mono flex-wrap ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                <span
-                  className="font-medium px-2 py-0.5 rounded-md text-[11px] flex items-center gap-1"
-                  style={{
-                    backgroundColor: `${habit.color}25`,
-                    color: habit.color,
-                  }}
-                >
-                  <Flame className="w-3 h-3" />
-                  {streakStats.currentStreak > 0
-                    ? `${streakStats.currentStreak}-day streak`
-                    : 'No streak'}
+      {/* Top Header: Clean 3-Tier Hierarchy */}
+      <div className="flex flex-col gap-1.5 mb-3">
+        {/* Tier 1: Check in + Emoji + Title on Left, Action Toolbar on Right */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            {/* Check Circle Button */}
+            <button
+              onClick={handleCheckToday}
+              title={
+                isTodayCompleted
+                  ? `Selesai! (${currentTodayVal}/${targetVal} ${habit.unit || ''})`
+                  : `Centang hari ini (${currentTodayVal}/${targetVal} ${habit.unit || ''})`
+              }
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer border shrink-0 ${
+                isTodayCompleted
+                  ? 'border-transparent text-white shadow-md transform active:scale-95'
+                  : isDarkMode
+                  ? 'border-[#2e2e3d] bg-[#16161f] text-zinc-500 hover:border-zinc-400 hover:text-zinc-200'
+                  : 'border-zinc-300 bg-zinc-100 text-zinc-400 hover:border-zinc-500 hover:text-zinc-700'
+              }`}
+              style={{
+                backgroundColor: isTodayCompleted ? habit.color : undefined,
+                boxShadow: isTodayCompleted ? `0 0 16px ${habit.color}66` : undefined,
+              }}
+            >
+              {isTodayCompleted ? (
+                <Check className="w-5 h-5 stroke-[2.8]" />
+              ) : isNumeric && currentTodayVal > 0 ? (
+                <span className={`text-[11px] font-mono font-bold ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
+                  {currentTodayVal}
                 </span>
-                <span className={isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}>
-                  Best: <strong className={`font-normal ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>{streakStats.bestStreak}</strong>
-                </span>
-                <span className={isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}>
-                  {streakStats.completionRate}%
-                </span>
+              ) : (
+                <div className={`w-3.5 h-3.5 rounded-full border border-dashed group-hover:scale-110 transition-transform ${isDarkMode ? 'border-zinc-500' : 'border-zinc-400'}`} />
+              )}
+            </button>
 
-                {isNumeric && (
-                  <span className={`px-2 py-0.5 rounded text-[11px] border ${isDarkMode ? 'text-zinc-400 bg-[#161622] border-[#242434]' : 'text-zinc-600 bg-zinc-100 border-zinc-200'}`}>
-                    Goal: {targetVal} {habit.unit || 'units'}
-                  </span>
-                )}
-              </div>
+            {/* Emoji & Name */}
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-2xl sm:text-3xl select-none shrink-0">{habit.emoji || '🎯'}</span>
+              <h3 className={`font-extrabold text-lg sm:text-xl tracking-tight truncate leading-tight ${isDarkMode ? 'text-white' : 'text-zinc-950'}`}>
+                {habit.name}
+              </h3>
             </div>
+          </div>
+
+          {/* Action Buttons Toolbar */}
+          <div className="flex items-center gap-1 shrink-0">
+            {onToggleFreeze && (
+              <button
+                onClick={() => onToggleFreeze(habit.id, todayStr)}
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer border ${
+                  isTodayFrozen
+                    ? 'text-cyan-500 bg-cyan-500/15 border-cyan-500/30'
+                    : isDarkMode
+                    ? 'text-zinc-400 hover:text-cyan-300 hover:bg-cyan-950/20 border-transparent'
+                    : 'text-zinc-600 hover:text-cyan-700 hover:bg-cyan-50 border-zinc-200 bg-zinc-50'
+                }`}
+                title={
+                  isTodayFrozen
+                    ? 'Streak Freeze aktif hari ini (Klik untuk batal)'
+                    : 'Aktifkan Streak Freeze hari ini (Rest Day)'
+                }
+              >
+                <Snowflake className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {onStartPomodoro && (
+              <button
+                onClick={() => onStartPomodoro(habit)}
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer border ${
+                  isDarkMode
+                    ? 'text-zinc-400 hover:text-amber-300 hover:bg-amber-950/30 border-transparent'
+                    : 'text-zinc-600 hover:text-amber-700 hover:bg-amber-50 border-zinc-200 bg-zinc-50'
+                }`}
+                title="Mulai Pomodoro Focus Timer"
+              >
+                <Timer className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {onShareHabit && (
+              <button
+                onClick={() => onShareHabit(habit)}
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer border ${
+                  isDarkMode
+                    ? 'text-zinc-400 hover:text-indigo-300 hover:bg-indigo-950/30 border-transparent'
+                    : 'text-zinc-600 hover:text-indigo-700 hover:bg-indigo-50 border-zinc-200 bg-zinc-50'
+                }`}
+                title="Bagikan Kartu Streak"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {onEditHabit && (
+              <button
+                onClick={() => onEditHabit(habit)}
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer border ${
+                  isDarkMode
+                    ? 'text-zinc-400 hover:text-white hover:bg-[#1a1a24] border-transparent'
+                    : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 border-zinc-200 bg-zinc-50'
+                }`}
+                title="Ubah Pengaturan Habit"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {onDeleteHabit && (
+              <button
+                onClick={() => onDeleteHabit(habit.id)}
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer border ${
+                  isDarkMode
+                    ? 'text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10 border-transparent'
+                    : 'text-zinc-600 hover:text-rose-600 hover:bg-rose-50 border-zinc-200 bg-zinc-50'
+                }`}
+                title="Hapus Habit"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className={`flex items-center gap-1 transition-opacity ${
-          isDarkMode ? 'opacity-70 group-hover:opacity-100' : 'opacity-100'
-        }`}>
-          {onToggleFreeze && (
-            <button
-              onClick={() => onToggleFreeze(habit.id, todayStr)}
-              className={`p-2 rounded-lg transition-colors cursor-pointer border ${
-                isTodayFrozen
-                  ? 'text-cyan-500 bg-cyan-500/15 border-cyan-500/30'
-                  : isDarkMode
-                  ? 'text-zinc-400 hover:text-cyan-300 hover:bg-cyan-950/20 border-transparent'
-                  : 'text-zinc-600 hover:text-cyan-700 hover:bg-cyan-50 border-zinc-200 bg-zinc-50'
-              }`}
-              title={
-                isTodayFrozen
-                  ? 'Streak Freeze aktif untuk hari ini (Klik untuk batalkan)'
-                  : 'Aktifkan Streak Freeze hari ini (Rest Day)'
-              }
-            >
-              <Snowflake className="w-4 h-4" />
-            </button>
+        {/* Tier 2: BADGES & GOAL ROW (Horizontal Tags) */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {/* Category */}
+          {habit.category && (
+            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-md border shrink-0 ${
+              isDarkMode ? 'text-zinc-300 bg-[#171724] border-[#29293e]' : 'text-zinc-600 bg-zinc-100 border-zinc-200'
+            }`}>
+              {habit.category}
+            </span>
           )}
-          {onStartPomodoro && (
-            <button
-              onClick={() => onStartPomodoro(habit)}
-              className={`p-2 rounded-lg transition-colors cursor-pointer border ${
-                isDarkMode
-                  ? 'text-zinc-400 hover:text-amber-300 hover:bg-amber-950/30 border-transparent'
-                  : 'text-zinc-600 hover:text-amber-700 hover:bg-amber-50 border-zinc-200 bg-zinc-50'
-              }`}
-              title="Start Pomodoro Focus Timer"
-            >
-              <Timer className="w-4 h-4" />
-            </button>
+
+          {/* Frequency */}
+          {freqLabel && (
+            <span className="text-[10px] font-medium text-indigo-500 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md shrink-0">
+              {freqLabel}
+            </span>
           )}
-          {onShareHabit && (
-            <button
-              onClick={() => onShareHabit(habit)}
-              className={`p-2 rounded-lg transition-colors cursor-pointer border ${
-                isDarkMode
-                  ? 'text-zinc-400 hover:text-indigo-300 hover:bg-indigo-950/30 border-transparent'
-                  : 'text-zinc-600 hover:text-indigo-700 hover:bg-indigo-50 border-zinc-200 bg-zinc-50'
-              }`}
-              title="Share streak card"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
+
+          {/* Streak Badge */}
+          <span
+            className="font-bold px-2 py-0.5 rounded-md text-[10px] font-mono flex items-center gap-1 shrink-0"
+            style={{
+              backgroundColor: `${habit.color}25`,
+              color: habit.color,
+            }}
+          >
+            <Flame className="w-3 h-3" />
+            {streakStats.currentStreak > 0
+              ? `${streakStats.currentStreak}h streak`
+              : 'No streak'}
+          </span>
+
+          {/* Target */}
+          {isNumeric && (
+            <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-medium border shrink-0 ${
+              isDarkMode ? 'text-zinc-300 bg-[#161622] border-[#242434]' : 'text-zinc-700 bg-zinc-100 border-zinc-200'
+            }`}>
+              {targetVal} {habit.unit || 'unit'}
+            </span>
           )}
-          {onEditHabit && (
-            <button
-              onClick={() => onEditHabit(habit)}
-              className={`p-2 rounded-lg transition-colors cursor-pointer border ${
-                isDarkMode
-                  ? 'text-zinc-400 hover:text-white hover:bg-[#1a1a24] border-transparent'
-                  : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 border-zinc-200 bg-zinc-50'
-              }`}
-              title="Edit habit settings"
-            >
-              <Edit3 className="w-4 h-4" />
-            </button>
-          )}
-          {onDeleteHabit && (
-            <button
-              onClick={() => onDeleteHabit(habit.id)}
-              className={`p-2 rounded-lg transition-colors cursor-pointer border ${
-                isDarkMode
-                  ? 'text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10 border-transparent'
-                  : 'text-zinc-600 hover:text-rose-600 hover:bg-rose-50 border-zinc-200 bg-zinc-50'
-              }`}
-              title="Delete habit"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
+        </div>
+
+        {/* Tier 3: STATS ROW (Record & Completion Rate - Separate Row) */}
+        <div className={`text-[10.5px] font-mono font-light tracking-wide ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
+          Rekor: <span className={`font-normal ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>{streakStats.bestStreak}h</span> • {streakStats.completionRate}% (30h)
         </div>
       </div>
 
@@ -362,7 +360,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
                             backgroundColor: isDone
                               ? habit.color
                               : isFrozen
-                              ? '#0284c7' // Ice blue color for freeze
+                              ? '#0284c7'
                               : isPartial
                               ? `${habit.color}88`
                               : day.isFuture
@@ -395,7 +393,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
             <div className={`flex items-center justify-end gap-1.5 text-[10px] font-mono mt-2 pr-1 w-full ${
               isDarkMode ? 'text-zinc-500' : 'text-zinc-400'
             }`}>
-              <span>Less</span>
+              <span>Kurang</span>
               <div className={`w-2.5 h-2.5 rounded-[2px] ${isDarkMode ? 'bg-[#1e1e28]' : 'bg-[#e4e4e7]'}`} />
               <div
                 className="w-2.5 h-2.5 rounded-[2px]"
@@ -405,13 +403,13 @@ export const HabitCard: React.FC<HabitCardProps> = ({
                 className="w-2.5 h-2.5 rounded-[2px]"
                 style={{ backgroundColor: habit.color }}
               />
-              <span>More</span>
+              <span>Rutin</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Popover / Mini Modal for Single Day Log & Reflection Note */}
+      {/* Popover Modal for Single Day Log */}
       {selectedDate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
           <div
@@ -444,7 +442,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
             {isNumeric ? (
               <div>
                 <label className={`block text-[11px] font-mono mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                  Logged Value ({habit.unit || 'units'} - Goal: {targetVal})
+                  Catat Angka ({habit.unit || 'unit'} - Target: {targetVal})
                 </label>
                 <div className="flex items-center gap-2">
                   <button
@@ -477,7 +475,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
             ) : (
               <div>
                 <label className={`block text-[11px] font-mono mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                  Status for {selectedDate}
+                  Status Tanggal {selectedDate}
                 </label>
                 <button
                   type="button"
@@ -490,7 +488,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
                       : 'bg-zinc-100 border-zinc-300 text-zinc-600 hover:bg-zinc-200'
                   }`}
                 >
-                  {cellVal === 1 ? '✓ Marked as Completed' : '○ Incomplete / Skipped'}
+                  {cellVal === 1 ? '✓ Sudah Selesai' : '○ Belum Dikerjakan'}
                 </button>
               </div>
             )}
@@ -498,11 +496,11 @@ export const HabitCard: React.FC<HabitCardProps> = ({
             {/* Reflection Note */}
             <div>
               <label className={`block text-[11px] font-mono mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                Daily Reflection Note (Optional)
+                Catatan Harian (Opsional)
               </label>
               <textarea
                 rows={2}
-                placeholder="How did this session go? Any notes?"
+                placeholder="Bagaimana progres kebiasaanmu hari ini?"
                 value={noteText}
                 onChange={(e) => setNoteText(e.target.value)}
                 className={`w-full border rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#8338ec] ${
@@ -519,14 +517,14 @@ export const HabitCard: React.FC<HabitCardProps> = ({
                 onClick={() => setSelectedDate(null)}
                 className={`px-3 py-1.5 text-xs ${isDarkMode ? 'text-zinc-400 hover:text-white' : 'text-zinc-500 hover:text-zinc-800'}`}
               >
-                Cancel
+                Batal
               </button>
               <button
                 type="button"
                 onClick={saveCellDetails}
                 className="px-4 py-1.5 text-xs font-semibold bg-[#8338ec] hover:bg-[#722ed1] text-white rounded-lg transition-all shadow-md shadow-[#8338ec]/30"
               >
-                Save
+                Simpan
               </button>
             </div>
           </div>
