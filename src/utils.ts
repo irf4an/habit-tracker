@@ -1,4 +1,4 @@
-// Date helper utilities for minimal habit tracker grid
+import { Habit } from './types';
 
 export function formatDate(d: Date): string {
   const year = d.getFullYear();
@@ -19,12 +19,12 @@ export function getTodayString(): string {
 export interface GridColumn {
   date: Date;
   dateStr: string;
-  dayOfWeek: number; // 0=Sun, 1=Mon, ..., 6=Sat
-  monthName: string; // e.g. "Jan", "Feb"
+  dayOfWeek: number;
+  monthName: string;
   isFirstDayOfMonth: boolean;
 }
 
-// Generate columns for 52-53 weeks (full year backward or compact)
+// Generate columns for weeks
 export function getYearDays(numWeeks: number = 52): {
   weeks: Array<Array<{ date: Date; dateStr: string; dayOfWeek: number; isFuture: boolean }>>;
   monthLabels: Array<{ name: string; colIndex: number }>;
@@ -32,8 +32,7 @@ export function getYearDays(numWeeks: number = 52): {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // We want the last column to end on Saturday of the current week
-  const currentDayOfWeek = today.getDay(); // 0: Sun, 6: Sat
+  const currentDayOfWeek = today.getDay();
   const endSaturday = new Date(today);
   endSaturday.setDate(today.getDate() + (6 - currentDayOfWeek));
 
@@ -44,7 +43,7 @@ export function getYearDays(numWeeks: number = 52): {
   const weeks: Array<Array<{ date: Date; dateStr: string; dayOfWeek: number; isFuture: boolean }>> = [];
   const monthLabels: Array<{ name: string; colIndex: number }> = [];
 
-  const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
   let lastLabeledMonth = -1;
 
   for (let w = 0; w < numWeeks; w++) {
@@ -83,7 +82,7 @@ export function getYearDays(numWeeks: number = 52): {
   return { weeks, monthLabels };
 }
 
-// Calculate streaks and percentages (with Streak Freeze awareness)
+// Calculate streaks and percentages
 export function calculateStreak(
   history: Record<string, number>,
   frozenDates: string[] = []
@@ -110,7 +109,6 @@ export function calculateStreak(
   let currentStreak = 0;
   let checkDate = new Date();
 
-  // If today is done or frozen, start from today, else start from yesterday
   if (isDoneOrFrozen(todayStr)) {
     while (true) {
       const s = formatDate(checkDate);
@@ -134,7 +132,6 @@ export function calculateStreak(
     }
   }
 
-  // Calculate best streak & total count in last 365 days
   let bestStreak = 0;
   let tempStreak = 0;
   let completedCount = 0;
@@ -161,7 +158,6 @@ export function calculateStreak(
 
   if (currentStreak > bestStreak) bestStreak = currentStreak;
 
-  // Rate in past 30 days
   const past30 = new Date();
   past30.setDate(past30.getDate() - 29);
   let past30Completed = 0;
@@ -181,4 +177,61 @@ export function calculateStreak(
     totalCompleted: completedCount,
     frozenCount: frozenDates.length,
   };
+}
+
+// Export habits data to CSV for Excel / Google Sheets
+export function exportHabitsToCSV(habits: Habit[]) {
+  const rows: string[][] = [
+    ['Habit ID', 'Habit Name', 'Category', 'Type', 'Target Goal', 'Unit', 'Date (YYYY-MM-DD)', 'Status', 'Logged Value', 'Reflection Note', 'Streak Freeze']
+  ];
+
+  habits.forEach((habit) => {
+    const dates = Object.keys(habit.history).sort();
+    if (dates.length === 0) {
+      rows.push([
+        habit.id,
+        habit.name,
+        habit.category || 'General',
+        habit.type || 'boolean',
+        String(habit.targetValue || 1),
+        habit.unit || '',
+        habit.createdAt,
+        'Created',
+        '0',
+        '',
+        'No'
+      ]);
+    } else {
+      dates.forEach((dateStr) => {
+        const val = habit.history[dateStr] || 0;
+        const target = habit.targetValue || 1;
+        const isDone = habit.type === 'numeric' ? val >= target : val === 1;
+        const isFrozen = (habit.frozenDates || []).includes(dateStr);
+        const note = habit.notes?.[dateStr] || '';
+
+        rows.push([
+          habit.id,
+          `"${habit.name.replace(/"/g, '""')}"`,
+          habit.category || 'General',
+          habit.type || 'boolean',
+          String(target),
+          habit.unit || '',
+          dateStr,
+          isDone ? 'Completed' : isFrozen ? 'Frozen' : 'Incomplete',
+          String(val),
+          `"${note.replace(/"/g, '""')}"`,
+          isFrozen ? 'Yes' : 'No'
+        ]);
+      });
+    }
+  });
+
+  const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + rows.map((e) => e.join(',')).join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `habit-tracker-export-${getTodayString()}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }

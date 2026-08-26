@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Habit } from '../types';
-import { Plus, Trash2, Edit3, MoveUp, MoveDown, Download, Upload, RefreshCw, Archive, ArchiveRestore } from 'lucide-react';
+import { Plus, Trash2, Edit3, MoveUp, MoveDown, Download, Upload, RefreshCw, Archive, ArchiveRestore, FileSpreadsheet } from 'lucide-react';
+import { exportHabitsToCSV } from '../utils';
 
 interface ManageViewProps {
   habits: Habit[];
@@ -269,7 +270,18 @@ export const ManageView: React.FC<ManageViewProps> = ({
             }`}
           >
             <Download className="w-3.5 h-3.5" />
-            Simpan Data
+            Backup JSON
+          </button>
+          <button
+            onClick={() => exportHabitsToCSV(habits)}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
+              isDarkMode
+                ? 'bg-[#1b1b26] hover:bg-[#262635] text-emerald-400 hover:text-emerald-300 border-[#2d2d3d]'
+                : 'bg-zinc-100 hover:bg-zinc-200 text-emerald-600 border-zinc-300'
+            }`}
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            Export CSV
           </button>
           <button
             onClick={onImport}
