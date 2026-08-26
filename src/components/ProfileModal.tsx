@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { UserProfile, Habit } from '../types';
 import { calculateBadges } from '../achievements';
-import { X, User, Trophy, Flame, CheckCircle2, Edit2, Check } from 'lucide-react';
+import { X, User, Trophy, Flame, CheckCircle2, Edit2, Check, Cloud } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface ProfileModalProps {
@@ -10,6 +10,8 @@ interface ProfileModalProps {
   profile: UserProfile;
   onSaveProfile: (profile: UserProfile) => void;
   habits: Habit[];
+  userEmail: string | null;
+  onOpenAuth: () => void;
   isDarkMode?: boolean;
 }
 
@@ -21,6 +23,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   profile,
   onSaveProfile,
   habits,
+  userEmail,
+  onOpenAuth,
   isDarkMode = true,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -223,6 +227,39 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   <span className={`text-[10.5px] block ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>{unlockedCount}/{totalCount} Badge</span>
                 </div>
               </div>
+            </div>
+
+            {/* Cloud Sync Status Banner */}
+            <div
+              onClick={() => {
+                onClose();
+                onOpenAuth();
+              }}
+              className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
+                userEmail
+                  ? 'bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/50'
+                  : 'bg-indigo-500/10 border-indigo-500/30 hover:border-indigo-500/50'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                  userEmail ? 'bg-emerald-500 text-white' : 'bg-indigo-600 text-white'
+                }`}>
+                  <Cloud className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className={`font-bold text-xs ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
+                    {userEmail ? 'Cloud Sync Aktif' : 'Sambungkan Cloud Sync'}
+                  </h4>
+                  <p className={`text-[10.5px] ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                    {userEmail ? userEmail : 'Sinkronkan data ke HP & laptop lain'}
+                  </p>
+                </div>
+              </div>
+
+              <span className={`text-[11px] font-bold ${userEmail ? 'text-emerald-500' : 'text-indigo-500'}`}>
+                {userEmail ? 'Kelola' : 'Masuk →'}
+              </span>
             </div>
 
             {/* Quick Stats Grid */}

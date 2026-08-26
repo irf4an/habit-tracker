@@ -9,12 +9,21 @@ import { OnboardingModal } from './components/OnboardingModal';
 import { PomodoroTimer, PomodoroSession } from './components/PomodoroTimer';
 import { AchievementsModal } from './components/AchievementsModal';
 import { ProfileModal } from './components/ProfileModal';
+import { AuthModal } from './components/AuthModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { calculateBadges } from './achievements';
 import { sendHabitNotification } from './notification';
 import { playCheckSound, playCelebrationSound } from './sound';
 import { UserProfile } from './types';
 import { getTodayString, formatDate } from './utils';
+import { supabase, isSupabaseConfigured } from './supabase';
+import {
+  fetchCloudHabits,
+  syncHabitToCloud,
+  deleteHabitFromCloud,
+  fetchCloudProfile,
+  syncProfileToCloud,
+} from './cloudSync';
 import {
   Calendar as CalendarIcon,
   BarChart3,
@@ -136,6 +145,21 @@ export function App() {
   const [shareHabit, setShareHabit] = useState<Habit | null>(null);
   const [showAchievements, setShowAchievements] = useState<boolean>(false);
   const [showProfile, setShowProfile] = useState<boolean>(false);
+  const [showAuth, setShowAuth] = useState<boolean>(false);
+  const [userId, setUserId] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('minimal_habit_auth_user_id');
+    } catch {
+      return null;
+    }
+  });
+  const [userEmail, setUserEmail] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('minimal_habit_auth_email');
+    } catch {
+      return null;
+    }
+  });
   const [pomodoroSession, setPomodoroSession] = useState<PomodoroSession | null>(null);
 
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
@@ -153,14 +177,56 @@ export function App() {
     };
   });
 
+  const handleAuthSuccess = async (user: { id: string; email: string }) => {
+    setUserId(user.id);
+    setUserEmail(user.email);
+    try {
+      localStorage.setItem('minimal_habit_auth_user_id', user.id);
+      localStorage.setItem('minimal_habit_auth_email', user.email);
+
+      // Load cloud data on login
+      const cloudHabits = await fetchCloudHabits(user.id);
+      if (cloudHabits && cloudHabits.length > 0) {
+        setHabits(cloudHabits);
+      } else {
+        // Upload current local habits to cloud
+        habits.forEach((h) => syncHabitToCloud(user.id, h));
+      }
+
+      const cloudProfile = await fetchCloudProfile(user.id);
+      if (cloudProfile) {
+        setUserProfile(cloudProfile);
+      } else {
+        syncProfileToCloud(user.id, userProfile);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleSignOut = () => {
+    setUserId(null);
+    setUserEmail(null);
+    try {
+      localStorage.removeItem('minimal_habit_auth_user_id');
+      localStorage.removeItem('minimal_habit_auth_email');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleSaveProfile = (updated: UserProfile) => {
     setUserProfile(updated);
+    if (userId) {
+      syncProfileToCloud(userId, updated);
+    }
     try {
       localStorage.setItem('minimal_habit_profile_v1', JSON.stringify(updated));
     } catch (e) {
       console.error(e);
     }
   };
+
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem('minimal_habit_theme_v1');
@@ -331,10 +397,17 @@ export function App() {
         } else {
           delete newHistory[dateStr];
         }
-        return {
+        const updatedHabit = {
           ...h,
           history: newHistory,
         };
+
+        // Sync to cloud if user is logged in
+        if (userId) {
+          syncHabitToCloud(userId, updatedHabit);
+        }
+
+        return updatedHabit;
       })
     );
   };
@@ -392,7 +465,12 @@ export function App() {
     if (data.id) {
       // Edit existing
       setHabits((prev) =>
-        prev.map((h) => (h.id === data.id ? { ...h, ...data } : h))
+        prev.map((h) => {
+          if (h.id !== data.id) return h;
+          const updated = { ...h, ...data };
+          if (userId) syncHabitToCloud(userId, updated);
+          return updated;
+        })
       );
     } else {
       // Create new
@@ -414,6 +492,10 @@ export function App() {
       };
       setHabits((prev) => [...prev, newHabit]);
 
+      if (userId) {
+        syncHabitToCloud(userId, newHabit);
+      }
+
       confetti({
         particleCount: 50,
         spread: 70,
@@ -426,6 +508,9 @@ export function App() {
   const handleDeleteHabit = (habitId: string) => {
     if (window.confirm('Are you sure you want to delete this habit?')) {
       setHabits((prev) => prev.filter((h) => h.id !== habitId));
+      if (userId) {
+        deleteHabitFromCloud(userId, habitId);
+      }
     }
   };
 
@@ -811,6 +896,18 @@ export function App() {
         profile={userProfile}
         onSaveProfile={handleSaveProfile}
         habits={habits}
+        userEmail={userEmail}
+        onOpenAuth={() => setShowAuth(true)}
+        isDarkMode={isDarkMode}
+      />
+
+      {/* Auth / Cloud Sync Modal */}
+      <AuthModal
+        isOpen={showAuth}
+        onClose={() => setShowAuth(false)}
+        userEmail={userEmail}
+        onAuthSuccess={handleAuthSuccess}
+        onSignOut={handleSignOut}
         isDarkMode={isDarkMode}
       />
 
