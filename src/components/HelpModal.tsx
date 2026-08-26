@@ -1,0 +1,121 @@
+import React from 'react';
+import { Sparkles, Keyboard, X, Command, MousePointerClick } from 'lucide-react';
+
+interface HelpModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  isDarkMode?: boolean;
+}
+
+export const HelpModal: React.FC<HelpModalProps> = ({
+  isOpen,
+  onClose,
+  isDarkMode = true,
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[75] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
+      <div
+        className={`border rounded-3xl max-w-md w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto ${
+          isDarkMode
+            ? 'bg-[#12121a] border-[#8338ec]/35 text-white'
+            : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'
+        }`}
+        style={{
+          boxShadow: isDarkMode
+            ? `0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(131,56,236,0.18)`
+            : `0 20px 50px rgba(0,0,0,0.15)`,
+        }}
+      >
+        {/* Header */}
+        <div className={`flex items-center justify-between border-b pb-3 mb-4 ${isDarkMode ? 'border-[#20202e]' : 'border-zinc-200'}`}>
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[#8338ec]" />
+            <h3 className={`text-base font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
+              Panduan & Shortcut
+            </h3>
+          </div>
+
+          <button
+            onClick={onClose}
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#1e1e2c]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'
+            }`}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Shortcuts Content */}
+        <div className="space-y-3">
+          <p className={`text-xs ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
+            Gunakan tombol cepat keyboard untuk mencatat kebiasaan dengan kilat tanpa perlu banyak klik.
+          </p>
+
+          <div className="space-y-2">
+            {/* N key */}
+            <div className={`p-3 rounded-2xl border flex items-center justify-between ${
+              isDarkMode ? 'bg-[#0f0f16] border-[#1e1e28]' : 'bg-zinc-50 border-zinc-200'
+            }`}>
+              <div className="flex items-center gap-2.5">
+                <kbd className={`px-2 py-1 rounded-lg text-xs font-mono font-bold border shadow-sm ${
+                  isDarkMode ? 'bg-[#1a1a28] border-[#2f2f44] text-[#8338ec]' : 'bg-white border-zinc-300 text-indigo-600'
+                }`}>
+                  N
+                </kbd>
+                <span className={`text-xs font-medium ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>
+                  Tambah kebiasaan baru
+                </span>
+              </div>
+              <span className={`text-[10.5px] font-mono ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Global</span>
+            </div>
+
+            {/* 1 - 9 keys */}
+            <div className={`p-3 rounded-2xl border flex items-center justify-between ${
+              isDarkMode ? 'bg-[#0f0f16] border-[#1e1e28]' : 'bg-zinc-50 border-zinc-200'
+            }`}>
+              <div className="flex items-center gap-2.5">
+                <kbd className={`px-2 py-1 rounded-lg text-xs font-mono font-bold border shadow-sm ${
+                  isDarkMode ? 'bg-[#1a1a28] border-[#2f2f44] text-[#8338ec]' : 'bg-white border-zinc-300 text-indigo-600'
+                }`}>
+                  1 - 9
+                </kbd>
+                <span className={`text-xs font-medium ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>
+                  Centang habit hari ini
+                </span>
+              </div>
+              <span className={`text-[10.5px] font-mono ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Sesuai No.</span>
+            </div>
+
+            {/* Shift + Click */}
+            <div className={`p-3 rounded-2xl border flex items-center justify-between ${
+              isDarkMode ? 'bg-[#0f0f16] border-[#1e1e28]' : 'bg-zinc-50 border-zinc-200'
+            }`}>
+              <div className="flex items-center gap-2.5">
+                <kbd className={`px-2 py-1 rounded-lg text-xs font-mono font-bold border shadow-sm ${
+                  isDarkMode ? 'bg-[#1a1a28] border-[#2f2f44] text-[#8338ec]' : 'bg-white border-zinc-300 text-indigo-600'
+                }`}>
+                  Shift + Klik
+                </kbd>
+                <span className={`text-xs font-medium ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>
+                  Catat jurnal / target angka
+                </span>
+              </div>
+              <span className={`text-[10.5px] font-mono ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Di Heatmap</span>
+            </div>
+          </div>
+
+          <div className="pt-2 text-center">
+            <button
+              onClick={onClose}
+              className="w-full py-2.5 bg-[#8338ec] hover:bg-[#722ed1] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-[#8338ec]/25 cursor-pointer"
+            >
+              Mengerti
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

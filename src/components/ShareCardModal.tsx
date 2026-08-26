@@ -14,7 +14,7 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ habit, onClose, 
   const cardRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
 
-  const streakStats = calculateStreak(habit.history);
+  const streakStats = calculateStreak(habit.history, habit.frozenDates || []);
   const todayStr = getTodayString();
   const isTodayDone = (habit.history[todayStr] || 0) >= (habit.targetValue || 1);
 
@@ -26,7 +26,7 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ habit, onClose, 
     setIsExporting(true);
     try {
       const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: '#0b0b0e',
+        backgroundColor: isDarkMode ? '#0b0b0e' : '#ffffff',
         scale: 2,
         useCORS: true,
       });
@@ -37,7 +37,7 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ habit, onClose, 
       link.click();
     } catch (err) {
       console.error('Export failed', err);
-      alert('Failed to generate image. Try again.');
+      alert('Gagal membuat gambar PNG. Coba lagi.');
     } finally {
       setIsExporting(false);
     }
@@ -48,7 +48,7 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ habit, onClose, 
     setIsExporting(true);
     try {
       const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: '#0b0b0e',
+        backgroundColor: isDarkMode ? '#0b0b0e' : '#ffffff',
         scale: 2,
         useCORS: true,
       });
@@ -58,12 +58,11 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ habit, onClose, 
       const file = new File([blob], 'habit-streak.png', { type: 'image/png' });
       if (navigator.share && navigator.canShare({ files: [file] })) {
         await navigator.share({
-          title: `My ${habit.name} Streak`,
-          text: `${streakStats.currentStreak}-day streak on ${habit.name}!`,
+          title: `Rekor ${habit.name} Saya`,
+          text: `Sudah ${streakStats.currentStreak} hari konsisten di ${habit.name}! 🔥`,
           files: [file],
         });
       } else {
-        // Fallback to download
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.download = 'habit-streak.png';
@@ -82,7 +81,7 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ habit, onClose, 
     if (!cardRef.current) return;
     try {
       const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: '#0b0b0e',
+        backgroundColor: isDarkMode ? '#0b0b0e' : '#ffffff',
         scale: 2,
       });
       canvas.toBlob(async (blob) => {
@@ -91,9 +90,9 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ habit, onClose, 
           await navigator.clipboard.write([
             new ClipboardItem({ 'image/png': blob }),
           ]);
-          alert('Image copied to clipboard!');
+          alert('Gambar berhasil disalin ke clipboard!');
         } catch {
-          alert('Clipboard not supported in this browser.');
+          alert('Fitur clipboard tidak didukung di browser ini.');
         }
       });
     } catch (err) {
@@ -102,14 +101,21 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ habit, onClose, 
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
       <div className="max-w-md w-full space-y-4">
-        {/* The actual shareable card */}
+        {/* THE SHAREABLE CARD */}
         <div
           ref={cardRef}
-          className="rounded-3xl overflow-hidden border border-[#26263a]"
+          className={`rounded-3xl overflow-hidden border transition-all ${
+            isDarkMode
+              ? 'border-[#8338ec]/35 text-white'
+              : 'border-zinc-200 text-zinc-900 shadow-2xl'
+          }`}
           style={{
-            background: `linear-gradient(145deg, ${habit.color}18 0%, #0e0e16 45%)`,
+            background: isDarkMode
+              ? `linear-gradient(145deg, ${habit.color}20 0%, #0e0e16 50%)`
+              : '#ffffff',
+            boxShadow: isDarkMode ? `0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(131,56,236,0.18)` : `0 20px 50px rgba(0,0,0,0.10)`,
           }}
         >
           <div className="p-6 space-y-5">
@@ -117,14 +123,16 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ habit, onClose, 
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-inner select-none"
                   style={{ backgroundColor: `${habit.color}25` }}
                 >
                   {habit.emoji}
                 </div>
                 <div>
-                  <h3 className="text-white font-bold text-lg leading-tight">{habit.name}</h3>
-                  <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
+                  <h3 className={`font-extrabold text-lg leading-tight ${isDarkMode ? 'text-white' : 'text-zinc-950'}`}>
+                    {habit.name}
+                  </h3>
+                  <p className="text-[10px] font-mono text-[#8338ec] font-semibold uppercase tracking-widest mt-0.5">
                     Minimal Habit Tracker
                   </p>
                 </div>
@@ -132,54 +140,58 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ habit, onClose, 
 
               {isTodayDone && (
                 <div
-                  className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold"
-                  style={{ backgroundColor: `${habit.color}30`, color: habit.color }}
+                  className="px-3 py-1 rounded-full text-[10.5px] font-mono font-bold"
+                  style={{ backgroundColor: `${habit.color}25`, color: habit.color }}
                 >
-                  TODAY ✓
+                  HARI INI ✓
                 </div>
               )}
             </div>
 
-            {/* Big Streak Number */}
+            {/* Big Streak Number & Statistics */}
             <div className="flex items-end gap-4">
               <div>
-                <div className="text-6xl font-extrabold text-white font-mono leading-none tracking-tighter">
+                <div className={`text-6xl font-extrabold font-mono leading-none tracking-tighter ${
+                  isDarkMode ? 'text-white' : 'text-zinc-950'
+                }`}>
                   {streakStats.currentStreak}
                 </div>
-                <div className="text-xs font-mono text-zinc-400 mt-1 uppercase tracking-wider">
-                  Day Streak
+                <div className={`text-xs font-mono mt-1 uppercase tracking-wider ${
+                  isDarkMode ? 'text-zinc-400' : 'text-zinc-500'
+                }`}>
+                  Hari Streak
                 </div>
               </div>
 
-              <div className="flex-1 space-y-2 pb-1">
-                <div className="flex justify-between text-[11px] font-mono">
-                  <span className="text-zinc-500">Best Record</span>
-                  <span className="text-white font-bold">{streakStats.bestStreak}d</span>
+              <div className="flex-1 space-y-2 pb-1 font-mono">
+                <div className="flex justify-between text-[11px]">
+                  <span className={isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}>Rekor Terbaik</span>
+                  <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{streakStats.bestStreak} hari</span>
                 </div>
-                <div className="flex justify-between text-[11px] font-mono">
-                  <span className="text-zinc-500">30-Day Rate</span>
-                  <span className="text-white font-bold">{streakStats.completionRate}%</span>
+                <div className="flex justify-between text-[11px]">
+                  <span className={isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}>Konsistensi 30H</span>
+                  <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{streakStats.completionRate}%</span>
                 </div>
-                <div className="flex justify-between text-[11px] font-mono">
-                  <span className="text-zinc-500">Total Logs</span>
-                  <span className="text-white font-bold">{streakStats.totalCompleted}</span>
+                <div className="flex justify-between text-[11px]">
+                  <span className={isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}>Total Selesai</span>
+                  <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{streakStats.totalCompleted}x</span>
                 </div>
               </div>
             </div>
 
             {/* Progress bar */}
-            <div className="h-2 w-full bg-[#1a1a26] rounded-full overflow-hidden">
+            <div className={`h-2 w-full rounded-full overflow-hidden ${isDarkMode ? 'bg-[#1a1a26]' : 'bg-zinc-200'}`}>
               <div
-                className="h-full rounded-full"
+                className="h-full rounded-full transition-all"
                 style={{
                   width: `${streakStats.completionRate}%`,
                   backgroundColor: habit.color,
-                  boxShadow: `0 0 12px ${habit.color}88`,
+                  boxShadow: `0 0 10px ${habit.color}88`,
                 }}
               />
             </div>
 
-            {/* Mini Heatmap */}
+            {/* Mini Heatmap Preview */}
             <div className="flex gap-[2.5px] pt-1">
               {weeks.map((week, wIdx) => (
                 <div key={wIdx} className="flex flex-col gap-[2.5px]">
@@ -187,13 +199,21 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ habit, onClose, 
                     const v = habit.history[day.dateStr] || 0;
                     const target = habit.targetValue || 1;
                     const done = habit.type === 'numeric' ? v >= target : v === 1;
+                    const isFrozen = (habit.frozenDates || []).includes(day.dateStr);
+
                     if (day.isFuture) return <div key={day.dateStr} className="w-2 h-2" />;
                     return (
                       <div
                         key={day.dateStr}
                         className="w-2 h-2 rounded-[1.5px]"
                         style={{
-                          backgroundColor: done ? habit.color : '#1d1d29',
+                          backgroundColor: done
+                            ? habit.color
+                            : isFrozen
+                            ? '#0284c7'
+                            : isDarkMode
+                            ? '#1d1d29'
+                            : '#e4e4e7',
                         }}
                       />
                     );
@@ -202,45 +222,59 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ habit, onClose, 
               ))}
             </div>
 
-            {/* Footer */}
-            <div className="flex items-center justify-between text-[9px] font-mono text-zinc-600 pt-2 border-t border-[#1e1e2c]">
-              <span>Generated {todayStr}</span>
-              <span>Track your habits daily</span>
+            {/* Card Footer */}
+            <div className={`flex items-center justify-between text-[9.5px] font-mono pt-2.5 border-t ${
+              isDarkMode ? 'text-zinc-500 border-[#1e1e2c]' : 'text-zinc-400 border-zinc-200'
+            }`}>
+              <span>Tanggal: {todayStr}</span>
+              <span>Disiplin setiap hari 🔥</span>
             </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons Toolbar */}
         <div className="flex items-center gap-2.5 justify-center flex-wrap">
           <button
             onClick={exportAsPng}
             disabled={isExporting}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white text-zinc-900 hover:bg-zinc-200 disabled:opacity-50 rounded-xl text-xs font-bold cursor-pointer transition-all active:scale-95"
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-md ${
+              isDarkMode
+                ? 'bg-white text-zinc-900 hover:bg-zinc-200'
+                : 'bg-zinc-900 text-white hover:bg-zinc-800'
+            }`}
           >
             <Download className="w-4 h-4" />
-            {isExporting ? 'Generating...' : 'Download PNG'}
+            {isExporting ? 'Memproses...' : 'Download PNG'}
           </button>
 
           <button
             onClick={shareNative}
             disabled={isExporting}
-            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold cursor-pointer transition-all active:scale-95"
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#8338ec] hover:bg-[#722ed1] text-white rounded-xl text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-md shadow-[#8338ec]/25"
           >
             <Share2 className="w-4 h-4" />
-            Share
+            Bagikan
           </button>
 
           <button
             onClick={copyToClipboard}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#1a1a26] hover:bg-[#242434] border border-[#2e2e40] text-zinc-300 hover:text-white rounded-xl text-xs font-semibold cursor-pointer transition-all"
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
+              isDarkMode
+                ? 'bg-[#1a1a26] hover:bg-[#242434] border-[#2e2e40] text-zinc-300 hover:text-white'
+                : 'bg-white hover:bg-zinc-100 border-zinc-300 text-zinc-700 hover:text-zinc-900 shadow-sm'
+            }`}
           >
             <Copy className="w-4 h-4" />
-            Copy Image
+            Salin Gambar
           </button>
 
           <button
             onClick={onClose}
-            className="p-2.5 text-zinc-400 hover:text-white bg-[#1a1a26] hover:bg-[#242434] rounded-xl transition-colors cursor-pointer"
+            className={`p-2.5 rounded-xl transition-colors cursor-pointer border ${
+              isDarkMode
+                ? 'bg-[#1a1a26] hover:bg-[#242434] border-[#2e2e40] text-zinc-400 hover:text-white'
+                : 'bg-white hover:bg-zinc-100 border-zinc-300 text-zinc-500 hover:text-zinc-900 shadow-sm'
+            }`}
           >
             <X className="w-4 h-4" />
           </button>

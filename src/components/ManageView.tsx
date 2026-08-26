@@ -2,10 +2,14 @@ import React, { useState } from 'react';
 import { Habit } from '../types';
 import { Plus, Trash2, Edit3, MoveUp, MoveDown, Download, Upload, RefreshCw, Archive, ArchiveRestore, FileSpreadsheet } from 'lucide-react';
 import { exportHabitsToCSV } from '../utils';
+import { requestNotificationPermission, sendHabitNotification } from '../notification';
+import { QuietHours } from '../types';
 
 interface ManageViewProps {
   habits: Habit[];
   isDarkMode?: boolean;
+  quietHours: QuietHours;
+  onQuietHoursChange: (qh: QuietHours) => void;
   onAddHabit: () => void;
   onEditHabit: (habit: Habit) => void;
   onDeleteHabit: (habitId: string) => void;
@@ -19,6 +23,8 @@ interface ManageViewProps {
 export const ManageView: React.FC<ManageViewProps> = ({
   habits,
   isDarkMode = true,
+  quietHours,
+  onQuietHoursChange,
   onAddHabit,
   onEditHabit,
   onDeleteHabit,
@@ -233,10 +239,8 @@ export const ManageView: React.FC<ManageViewProps> = ({
           })}
 
           {displayedHabits.length === 0 && (
-            <div className="text-center py-8 text-zinc-400 text-xs">
-              {showArchived
-                ? 'Belum ada kebiasaan yang diarsipkan.'
-                : 'Belum ada kebiasaan aktif. Klik tombol "+" di atas untuk mulai!'}
+            <div className={`text-center py-8 text-sm rounded-xl border border-dashed ${isDarkMode ? 'text-zinc-400 border-zinc-800 bg-[#0f0f16]' : 'text-zinc-600 border-zinc-300 bg-zinc-50'}`}>
+              {showArchived ? 'Arsip kosong — kebiasaan yang diarsipkan akan muncul di sini.' : 'Belum ada kebiasaan aktif. Ketuk + Tambah untuk mulai.'}
             </div>
           )}
         </div>
@@ -255,10 +259,27 @@ export const ManageView: React.FC<ManageViewProps> = ({
             : `0 8px 30px rgba(131, 56, 236, 0.08)`,
         }}
       >
-        <h3 className={`text-sm sm:text-base font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Cadangan Data</h3>
-        <p className={`text-xs mb-3 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
-          Simpan atau pulihkan data kebiasaanmu kapan saja.
-        </p>
+        <h3 className={`text-sm sm:text-base font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Cadangan Data & Quiet Hours</h3>
+        <p className={`text-xs mb-3 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>Simpan/pulihkan data, atur jam sunyi notifikasi, dan uji kirim.</p>
+        <div className={`mb-4 p-3 rounded-xl border flex flex-wrap items-center gap-3 ${isDarkMode ? 'bg-[#0f0f16] border-[#1e1e28]' : 'bg-zinc-50 border-zinc-200'}`}>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={quietHours.enabled} onChange={(e) => onQuietHoursChange({ ...quietHours, enabled: e.target.checked })} className="accent-[#8338ec]" />
+            <span className={`text-xs font-semibold ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>Quiet hours</span>
+          </label>
+          <input type="time" value={quietHours.start} onChange={(e) => onQuietHoursChange({ ...quietHours, start: e.target.value })} disabled={!quietHours.enabled} className={`border rounded-lg px-2 py-1 text-xs font-mono ${isDarkMode ? 'bg-[#0a0a10] border-[#252538] text-white disabled:opacity-40' : 'bg-white border-zinc-300 text-zinc-900 disabled:opacity-40'}`} />
+          <span className={`text-xs ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>sampai</span>
+          <input type="time" value={quietHours.end} onChange={(e) => onQuietHoursChange({ ...quietHours, end: e.target.value })} disabled={!quietHours.enabled} className={`border rounded-lg px-2 py-1 text-xs font-mono ${isDarkMode ? 'bg-[#0a0a10] border-[#252538] text-white disabled:opacity-40' : 'bg-white border-zinc-300 text-zinc-900 disabled:opacity-40'}`} />
+          <button
+            onClick={async () => {
+              const ok = await requestNotificationPermission();
+              if (!ok) return;
+              sendHabitNotification('Test notifikasi', 'Jika kamu melihat ini, notifikasi sudah aktif.', '🔔');
+            }}
+            className={`ml-auto px-3 py-1.5 rounded-xl text-xs font-semibold border ${isDarkMode ? 'bg-[#1a1a28] border-[#2e2e40] text-zinc-200' : 'bg-zinc-100 border-zinc-300 text-zinc-800'}`}
+          >
+            Uji notifikasi
+          </button>
+        </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           <button

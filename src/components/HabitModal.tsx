@@ -357,32 +357,32 @@ export const HabitModal: React.FC<HabitModalProps> = ({
             </div>
           </div>
 
-          {/* Daily Browser Push Reminder */}
+          {/* Daily Browser Push Reminder + Test send */}
           <div className={`p-3.5 rounded-xl border space-y-2.5 ${isDarkMode ? 'bg-[#101017] border-[#222230]' : 'bg-zinc-50 border-zinc-200'}`}>
             <div className="flex items-center justify-between">
               <div className={`flex items-center gap-2 text-xs font-semibold ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
                 <Bell className="w-4 h-4 text-amber-500" />
-                <span>Daily Reminder Notification</span>
+                <span>Daily Reminder</span>
+                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${isDarkMode ? 'bg-[#1a1a28] text-zinc-500' : 'bg-zinc-200 text-zinc-600'}`}>snooze + quiet hours</span>
               </div>
-              <input
-                type="checkbox"
-                checked={reminderEnabled}
-                onChange={(e) => handleReminderToggle(e.target.checked)}
-                className="w-4 h-4 accent-[#8338ec] cursor-pointer rounded"
-              />
+              <input type="checkbox" checked={reminderEnabled} onChange={(e) => handleReminderToggle(e.target.checked)} className="w-4 h-4 accent-[#8338ec] cursor-pointer rounded" />
             </div>
-
             {reminderEnabled && (
-              <div className="flex items-center gap-3 pt-1 animate-in fade-in">
-                <span className={`text-[11px] font-mono ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Ingatkan setiap jam:</span>
-                <input
-                  type="time"
-                  value={reminderTime}
-                  onChange={(e) => setReminderTime(e.target.value)}
-                  className={`border rounded-lg px-2.5 py-1 text-xs font-mono focus:outline-none focus:border-[#8338ec] ${
-                    isDarkMode ? 'bg-[#0b0b10] border-[#2a2a3c] text-white' : 'bg-white border-zinc-300 text-zinc-900'
-                  }`}
-                />
+              <div className="space-y-2 pt-1 animate-in fade-in">
+                <div className="flex items-center gap-3">
+                  <span className={`text-[11px] font-mono ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Jam ingatan:</span>
+                  <input type="time" value={reminderTime} onChange={(e) => setReminderTime(e.target.value)} className={`border rounded-lg px-2.5 py-1 text-xs font-mono focus:outline-none focus:border-[#8338ec] ${isDarkMode ? 'bg-[#0b0b10] border-[#2a2a3c] text-white' : 'bg-white border-zinc-300 text-zinc-900'}`} />
+                  <button type="button" onClick={async () => {
+                    const { sendHabitNotification } = await import('../notification');
+                    const { requestNotificationPermission } = await import('../notification');
+                    const ok = await requestNotificationPermission();
+                    if (!ok) return;
+                    sendHabitNotification(`Test — ${name || 'Habit'}`, 'Ini preview notifikasi pengingat harian.', emoji || '🔔');
+                  }} className={`ml-auto px-2.5 py-1 rounded-lg text-[11px] font-semibold border ${isDarkMode ? 'bg-[#1a1a28] border-[#2e2e40] text-zinc-300 hover:text-white' : 'bg-white border-zinc-300 text-zinc-700'}`}>
+                    Uji kirim
+                  </button>
+                </div>
+                <p className={`text-[11px] leading-snug ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>Atur quiet hours global di Manage → Cadangan Data. Snooze 10 menit tersedia dari notifikasi saat berbunyi.</p>
               </div>
             )}
           </div>

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Habit } from '../types';
 import { getTodayString, getYearDays, calculateStreak } from '../utils';
-import { Check, Trash2, Edit3, Flame, Plus, Minus, Share2, Timer, Snowflake } from 'lucide-react';
+import { Check, Trash2, Edit3, Flame, Plus, Minus, Share2, Timer, Snowflake, Bell } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { playCheckSound, playUncheckSound } from '../sound';
 
@@ -272,18 +272,16 @@ export const HabitCard: React.FC<HabitCardProps> = ({
           )}
 
           {/* Streak Badge */}
-          <span
-            className="font-bold px-2 py-0.5 rounded-md text-[10px] font-mono flex items-center gap-1 shrink-0"
-            style={{
-              backgroundColor: `${habit.color}25`,
-              color: habit.color,
-            }}
-          >
-            <Flame className="w-3 h-3" />
-            {streakStats.currentStreak > 0
-              ? `${streakStats.currentStreak}h streak`
-              : 'No streak'}
-          </span>
+              <span
+                className="font-bold px-2 py-0.5 rounded-md text-[10px] font-mono flex items-center gap-1 shrink-0"
+                style={{
+                  backgroundColor: `${habit.color}25`,
+                  color: habit.color,
+                }}
+              >
+                <Flame className="w-3 h-3" />
+                {streakStats.currentStreak > 0 ? `${streakStats.currentStreak} hari beruntun` : 'Belum ada streak'}
+              </span>
 
           {/* Target */}
           {isNumeric && (
@@ -291,6 +289,20 @@ export const HabitCard: React.FC<HabitCardProps> = ({
               isDarkMode ? 'text-zinc-300 bg-[#161622] border-[#242434]' : 'text-zinc-700 bg-zinc-100 border-zinc-200'
             }`}>
               {targetVal} {habit.unit || 'unit'}
+            </span>
+          )}
+
+          {/* Daily Reminder Indicator Icon */}
+          {habit.reminderEnabled && (
+            <span
+              title={`Pengingat aktif setiap jam ${habit.reminderTime || '20:00'}`}
+              className={`p-1 rounded-md border flex items-center justify-center shrink-0 ${
+                isDarkMode
+                  ? 'text-amber-400 bg-amber-500/10 border-amber-500/25'
+                  : 'text-amber-600 bg-amber-50 border-amber-200'
+              }`}
+            >
+              <Bell className="w-3 h-3 stroke-[2.5]" />
             </span>
           )}
         </div>

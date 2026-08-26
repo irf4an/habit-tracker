@@ -28,6 +28,13 @@ export interface Habit {
   reminderEnabled?: boolean;
   reminderTime?: string; // "HH:mm" e.g. "08:00", "20:30"
   lastNotifiedDate?: string; // "YYYY-MM-DD" to avoid multiple alerts per day
+  snoozedUntil?: number; // epoch ms until which reminder is snoozed
+}
+
+export interface QuietHours {
+  enabled: boolean;
+  start: string; // "HH:mm"
+  end: string; // "HH:mm"
 }
 
 export type ViewTab = 'calendar' | 'statistics' | 'manage';

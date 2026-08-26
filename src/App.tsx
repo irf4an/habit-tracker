@@ -13,9 +13,9 @@ import { AuthModal } from './components/AuthModal';
 import { HelpModal } from './components/HelpModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { calculateBadges } from './achievements';
-import { sendHabitNotification } from './notification';
+import { sendHabitNotification, isInQuietHours } from './notification';
 import { playCheckSound, playCelebrationSound } from './sound';
-import { UserProfile } from './types';
+import { UserProfile, QuietHours } from './types';
 import { getTodayString, formatDate } from './utils';
 import { supabase, isSupabaseConfigured } from './supabase';
 import {
@@ -162,6 +162,16 @@ export function App() {
     }
   });
   const [pomodoroSession, setPomodoroSession] = useState<PomodoroSession | null>(null);
+  const [quietHours, setQuietHours] = useState<QuietHours>(() => {
+    try {
+      const raw = localStorage.getItem('minimal_habit_quiet_hours_v1');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return { enabled: false, start: '22:00', end: '07:00' };
+  });
+  useEffect(() => {
+    try { localStorage.setItem('minimal_habit_quiet_hours_v1', JSON.stringify(quietHours)); } catch {}
+  }, [quietHours]);
 
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
     try {
@@ -311,7 +321,7 @@ export function App() {
     }
   }, [habits]);
 
-  // Periodic Reminder Checker (runs every 30 seconds)
+  // Periodic Reminder Checker — snooze + quiet hours + de-dupe per day
   useEffect(() => {
     const checkReminders = () => {
       const now = new Date();
@@ -319,36 +329,49 @@ export function App() {
       const currentMins = String(now.getMinutes()).padStart(2, '0');
       const currentTimeStr = `${currentHours}:${currentMins}`;
       const todayStr = getTodayString();
+      const nowMs = Date.now();
+
+      if (quietHours.enabled && isInQuietHours(quietHours.start, quietHours.end, now)) return;
 
       habits.forEach((habit) => {
-        if (
-          habit.reminderEnabled &&
-          habit.reminderTime === currentTimeStr &&
-          habit.lastNotifiedDate !== todayStr &&
-          !habit.archived
-        ) {
-          // Check if already completed today
-          const isDone = (habit.history[todayStr] || 0) >= (habit.targetValue || 1);
-          if (!isDone) {
-            sendHabitNotification(
-              `Waktunya ${habit.name}!`,
-              `Jangan lupa selesaikan daily routine ${habit.name} hari ini agar streak tetap terjaga!`,
-              habit.emoji
-            );
-
-            // Update last notified date
-            setHabits((prev) =>
-              prev.map((h) => (h.id === habit.id ? { ...h, lastNotifiedDate: todayStr } : h))
-            );
-          }
+        if (!habit.reminderEnabled || habit.archived) return;
+        // Snoozed?
+        if (habit.snoozedUntil && nowMs < habit.snoozedUntil) return;
+        // Only fire once per day per habit, unless snoozed
+        const isTime = habit.reminderTime === currentTimeStr;
+        if (!isTime) return;
+        if (habit.lastNotifiedDate === todayStr) return;
+        const isDone = (habit.history[todayStr] || 0) >= (habit.targetValue || 1);
+        if (isDone) return;
+        // Snooze handler via notification: we attach timeout to re-notify
+        const snoozeMs = 10 * 60 * 1000;
+        const notif = sendHabitNotification(
+          `Waktunya ${habit.name}!`,
+          `Tap untuk buka — snooze 10 menit jika belum sempat.`,
+          habit.emoji
+        );
+        // If user focuses app quickly, count as seen; otherwise snooze auto on next tick
+        if (notif) {
+          notif.onclose = () => {};
         }
+        // Mark notified, and schedule snooze window: clear snooze after 10m to allow re-fire once
+        setHabits((prev) =>
+          prev.map((h) =>
+            h.id === habit.id
+              ? { ...h, lastNotifiedDate: todayStr, snoozedUntil: nowMs + snoozeMs }
+              : h
+          )
+        );
+        // Clear snooze after window so a second daily reminder doesn't spam
+        setTimeout(() => {
+          setHabits((prev) => prev.map((h) => (h.id === habit.id ? { ...h, snoozedUntil: undefined } : h)));
+        }, snoozeMs + 1000);
       });
     };
-
     checkReminders();
     const interval = setInterval(checkReminders, 30000);
     return () => clearInterval(interval);
-  }, [habits]);
+  }, [habits, quietHours]);
 
   // Global Keyboard shortcuts
   useEffect(() => {
@@ -777,23 +800,25 @@ export function App() {
             ))}
 
             {filteredHabits.length === 0 && (
-              <div className="bg-[#111116] border border-[#1e1e26] rounded-2xl p-12 text-center">
-                <div className="text-4xl mb-3">🌱</div>
-                <h3 className="text-lg font-bold text-white mb-1">No Habits in this Filter</h3>
-                <p className="text-xs font-mono text-zinc-400 mb-5">
+              <div className={`border rounded-2xl p-8 sm:p-10 text-center ${isDarkMode ? 'bg-[#111116] border-[#1e1e28]' : 'bg-white border-zinc-200'}`}>
+                <div className="text-3xl mb-3" aria-hidden>🌱</div>
+                <h3 className={`text-base font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
+                  {habits.length === 0 ? 'Belum ada kebiasaan' : 'Tidak ada yang cocok'}
+                </h3>
+                <p className={`text-sm mb-5 max-w-sm mx-auto ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
                   {habits.length === 0
-                    ? 'Start building momentum today by tracking your first routine!'
-                    : 'No active habits found for this category.'}
+                    ? 'Mulai dari satu yang paling gampang — nanti kebiasaan lain tinggal ditambah.'
+                    : 'Coba ganti filter kategori atau buat kebiasaan baru.'}
                 </p>
                 <button
-                  onClick={() => {
-                    setEditingHabit(null);
-                    setIsModalOpen(true);
-                  }}
-                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-lg shadow-indigo-600/30 transition-all"
+                  onClick={() => { setEditingHabit(null); setIsModalOpen(true); }}
+                  className="px-5 py-2.5 bg-[#8338ec] hover:bg-[#722ed1] text-white rounded-xl text-sm font-semibold cursor-pointer shadow-lg shadow-[#8338ec]/20 transition-all"
                 >
-                  Create Habit
+                  Buat kebiasaan pertama
                 </button>
+                {habits.length === 0 && (
+                  <p className={`text-xs mt-3 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>Tips: tekan N di keyboard untuk cepat.</p>
+                )}
               </div>
             )}
           </div>
@@ -805,6 +830,8 @@ export function App() {
           <ManageView
             habits={habits}
             isDarkMode={isDarkMode}
+            quietHours={quietHours}
+            onQuietHoursChange={setQuietHours}
             onAddHabit={() => {
               setEditingHabit(null);
               setIsModalOpen(true);
