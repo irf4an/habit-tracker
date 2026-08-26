@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { Habit, ViewTab } from './types';
 import { HabitCard } from './components/HabitCard';
 import { HabitModal } from './components/HabitModal';
@@ -248,15 +249,26 @@ export function App() {
     return true;
   });
 
-  const toggleTheme = () => {
-    setIsDarkMode((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem('minimal_habit_theme_v1', next ? 'dark' : 'light');
-      } catch (e) {
-        console.error(e);
-      }
-      return next;
+  const toggleTheme = (e?: React.MouseEvent<HTMLButtonElement>) => {
+    const nextDark = !isDarkMode;
+    const x = e ? e.clientX : window.innerWidth - 24;
+    const y = e ? e.clientY : 32;
+    const apply = () => flushSync(() => {
+      setIsDarkMode(nextDark);
+      try { localStorage.setItem('minimal_habit_theme_v1', nextDark ? 'dark' : 'light'); } catch {}
+    });
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void> } };
+    if (!doc.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      apply();
+      return;
+    }
+    const t = doc.startViewTransition(apply);
+    t.ready.then(() => {
+      const maxR = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+      document.documentElement.animate(
+        { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${maxR}px at ${x}px ${y}px)`] },
+        { duration: 420, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', pseudoElement: '::view-transition-new(root)' }
+      );
     });
   };
   const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
@@ -716,8 +728,6 @@ export function App() {
                 onToggleDate={handleToggleDate}
                 onToggleFreeze={handleToggleFreeze}
                 onSaveNote={handleSaveNote}
-                onDeleteHabit={handleDeleteHabit}
-                onEditHabit={handleOpenEdit}
                 onShareHabit={setShareHabit}
                 onStartPomodoro={handleStartPomodoro}
               />
