@@ -10,6 +10,7 @@ import { PomodoroTimer, PomodoroSession } from './components/PomodoroTimer';
 import { AchievementsModal } from './components/AchievementsModal';
 import { ProfileModal } from './components/ProfileModal';
 import { AuthModal } from './components/AuthModal';
+import { HelpModal } from './components/HelpModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { calculateBadges } from './achievements';
 import { sendHabitNotification } from './notification';
@@ -605,7 +606,7 @@ export function App() {
           {/* Left: Help & Badges */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowHelp((v) => !v)}
+              onClick={() => setShowHelp(true)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer shadow-sm ${
                 isDarkMode
                   ? 'bg-[#161620] hover:bg-[#20202c] text-zinc-300 hover:text-white border-[#282838]'
@@ -613,7 +614,7 @@ export function App() {
               }`}
             >
               <HelpCircle className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{showHelp ? 'Hide Help' : 'Help & Shortcuts'}</span>
+              <span className="hidden sm:inline">Panduan</span>
               <span className="sm:hidden">Help</span>
             </button>
 
@@ -713,27 +714,6 @@ export function App() {
 
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 pb-24 sm:pb-10">
-
-        {/* Help & Shortcut Guide */}
-        {showHelp && (
-          <div className="mb-6 p-4 bg-[#14141c] border border-indigo-500/30 rounded-2xl text-xs text-zinc-300 font-mono flex items-start justify-between gap-4 animate-in fade-in">
-            <div className="space-y-1.5">
-              <div className="font-bold text-indigo-400 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4" /> Pro Shortcuts & Gestures:
-              </div>
-              <p>• Press <kbd className="px-1.5 py-0.5 bg-[#232330] rounded text-white">N</kbd> anywhere to create a new habit.</p>
-              <p>• Press <kbd className="px-1.5 py-0.5 bg-[#232330] rounded text-white">1</kbd> to <kbd className="px-1.5 py-0.5 bg-[#232330] rounded text-white">9</kbd> to toggle completion for habits today.</p>
-              <p>• <strong className="text-white">Shift + Click</strong> on any grid block to log specific numbers or write a journal note for that day.</p>
-            </div>
-            <button
-              onClick={() => setShowHelp(false)}
-              className="text-zinc-500 hover:text-zinc-300 cursor-pointer"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
         {/* Category Filter & Full View Toggle Bar */}
         {activeTab === 'calendar' && (
           <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
@@ -889,6 +869,13 @@ export function App() {
         <ShareCardModal habit={shareHabit} onClose={() => setShareHabit(null)} isDarkMode={isDarkMode} />
       )}
 
+      {/* Help / Shortcuts Modal */}
+      <HelpModal
+        isOpen={showHelp}
+        onClose={() => setShowHelp(false)}
+        isDarkMode={isDarkMode}
+      />
+
       {/* Profile Modal */}
       <ProfileModal
         isOpen={showProfile}
@@ -927,6 +914,7 @@ export function App() {
           setEditingHabit(null);
           setIsModalOpen(true);
         }}
+        isDarkMode={isDarkMode}
       />
     </div>
   );
