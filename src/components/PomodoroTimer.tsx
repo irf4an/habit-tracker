@@ -27,37 +27,38 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   const [isMinimized, setIsMinimized] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState<number>(25); // minutes
 
+  // All hooks must be above any early return (Rules of Hooks — fixes React #310)
   useEffect(() => {
-    let interval: any = null;
-
-    if (session && session.isRunning && session.remainingSeconds > 0) {
-      interval = setInterval(() => {
-        onUpdateSession({
-          ...session,
-          remainingSeconds: session.remainingSeconds - 1,
-        });
-      }, 1000);
-    } else if (session && session.remainingSeconds === 0) {
-      // Completed!
-      playPomodoroBell();
-      confetti({
-        particleCount: 80,
-        spread: 80,
-        origin: { y: 0.6 },
-        colors: [session.habit.color, '#ffffff', '#fbbf24'],
+    if (!session || !session.isRunning || session.remainingSeconds <= 0) return;
+    const interval: number = window.setInterval(() => {
+      onUpdateSession({
+        ...session,
+        remainingSeconds: session.remainingSeconds - 1,
       });
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [session, onUpdateSession]);
 
-      const minutesDone = Math.round(session.totalSeconds / 60);
-      onCompleteHabit(session.habit.id, minutesDone);
-
-      // Reset
-      onUpdateSession(null);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+  useEffect(() => {
+    if (!session || session.remainingSeconds !== 0) return;
+    playPomodoroBell();
+    confetti({
+      particleCount: 80,
+      spread: 80,
+      origin: { y: 0.6 },
+      colors: [session.habit.color, '#ffffff', '#fbbf24'],
+    });
+    const minutesDone = Math.round(session.totalSeconds / 60);
+    onCompleteHabit(session.habit.id, minutesDone);
+    onUpdateSession(null);
   }, [session, onUpdateSession, onCompleteHabit]);
+
+  useEffect(() => {
+    if (!session || isMinimized) return;
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onUpdateSession(null); };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [session, onUpdateSession, isMinimized]);
 
   if (!session) return null;
 
@@ -105,62 +106,34 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
     }
   };
 
-  // FLOATING MINIMIZED BAR (bisa tetap navigasi app sambil timer jalan)
+  // FLOATING MINIMIZED BAR — render di atas modal, tanpa backdrop hitam ganda
   if (isMinimized) {
     return (
-      <div className="fixed bottom-5 left-5 z-[80] animate-in slide-in-from-bottom duration-200">
+      <div className="fixed bottom-5 left-5 z-[90] animate-in slide-in-from-bottom duration-200">
         <div
           className="bg-[#14141d]/95 backdrop-blur-md border border-[#2a2a3e] rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3.5"
-          style={{
-            boxShadow: `0 8px 30px rgba(0,0,0,0.6), 0 0 20px ${session.habit.color}25`,
-          }}
+          style={{ boxShadow: `0 8px 30px rgba(0,0,0,0.6), 0 0 20px ${session.habit.color}25` }}
         >
           <div className="flex items-center gap-2">
-            <span className="text-xl animate-pulse">{session.habit.emoji}</span>
+            <span className="text-xl animate-pulse" aria-hidden>{session.habit.emoji}</span>
             <div>
               <div className="text-xs font-bold text-white leading-tight flex items-center gap-1.5">
                 <span>{session.habit.name}</span>
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: session.habit.color }} />
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: session.habit.color }} aria-hidden />
               </div>
-              <div className="text-[11px] font-mono text-indigo-400 font-semibold">
-                {timeFormatted} {session.isRunning ? '• Focusing' : '• Paused'}
-              </div>
+              <div className="text-[11px] font-mono text-indigo-400 font-semibold">{timeFormatted} {session.isRunning ? '• Focusing' : '• Paused'}</div>
             </div>
           </div>
-
           <div className="flex items-center gap-1">
-            <button
-              onClick={togglePlayPause}
-              className="p-1.5 bg-[#20202e] hover:bg-[#2c2c40] text-white rounded-lg cursor-pointer transition-colors"
-            >
-              {session.isRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-white" />}
-            </button>
-            <button
-              onClick={() => setIsMinimized(false)}
-              className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-[#20202e] cursor-pointer transition-colors"
-              title="Expand timer"
-            >
-              <Maximize2 className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => onUpdateSession(null)}
-              className="p-1.5 text-zinc-500 hover:text-rose-400 rounded-lg hover:bg-rose-950/30 cursor-pointer transition-colors"
-              title="Stop timer"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
+            <button type="button" aria-label={session.isRunning ? 'Jeda timer' : 'Lanjutkan timer'} onClick={togglePlayPause} className="p-1.5 bg-[#20202e] hover:bg-[#2c2c40] text-white rounded-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">{session.isRunning ? <Pause className="w-3.5 h-3.5" aria-hidden /> : <Play className="w-3.5 h-3.5 fill-white" aria-hidden />}</button>
+            <button type="button" aria-label="Perbesar timer" onClick={() => setIsMinimized(false)} className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-[#20202e] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" title="Expand timer"><Maximize2 className="w-3.5 h-3.5" aria-hidden /></button>
+            <button type="button" aria-label="Hentikan timer" onClick={() => onUpdateSession(null)} className="p-1.5 text-zinc-500 hover:text-rose-400 rounded-lg hover:bg-rose-950/30 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400" title="Stop timer"><X className="w-3.5 h-3.5" aria-hidden /></button>
           </div>
         </div>
       </div>
     );
   }
 
-  React.useEffect(() => {
-    if (!session) return;
-    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onUpdateSession(null); };
-    window.addEventListener('keydown', onEsc);
-    return () => window.removeEventListener('keydown', onEsc);
-  }, [session, onUpdateSession]);
   // FULL FOCUS MODAL
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in" role="dialog" aria-modal="true" aria-label={`Timer fokus untuk ${session.habit.name}`} onClick={() => onUpdateSession(null)}>

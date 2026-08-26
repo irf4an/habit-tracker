@@ -82,10 +82,65 @@ export function getYearDays(numWeeks: number = 52): {
   return { weeks, monthLabels };
 }
 
-// Calculate streaks and percentages
+export const FREEZE_WEEKLY_LIMIT = 2;
+
+export function countFreezesInLast7Days(frozenDates: string[], anchorDate: Date = new Date()): number {
+  const a = new Date(anchorDate); a.setHours(0, 0, 0, 0);
+  const start = new Date(a); start.setDate(a.getDate() - 6);
+  return frozenDates.filter((d) => {
+    const dt = parseDate(d); dt.setHours(0, 0, 0, 0);
+    return dt.getTime() >= start.getTime() && dt.getTime() <= a.getTime();
+  }).length;
+}
+
+export function canFreezeOnDate(frozenDates: string[], dateStr: string, weeklyLimit: number = FREEZE_WEEKLY_LIMIT): boolean {
+  if (frozenDates.includes(dateStr)) return true; // sudah freeze → boleh batal
+  const d = parseDate(dateStr);
+  return countFreezesInLast7Days(frozenDates, d) < weeklyLimit;
+}
+
+export function freezeRemaining(frozenDates: string[], dateStr: string, weeklyLimit: number = FREEZE_WEEKLY_LIMIT): number {
+  if (frozenDates.includes(dateStr)) return weeklyLimit - countFreezesInLast7Days(frozenDates.filter((x) => x !== dateStr), parseDate(dateStr));
+  return Math.max(0, weeklyLimit - countFreezesInLast7Days(frozenDates, parseDate(dateStr)));
+}
+
+// Schedule helpers for streak logic per frequency
+function getWeekStart(d: Date): Date {
+  // Monday = 0 .. Sunday = 6 (ISO)
+  const day = d.getDay(); // 0 Sun .. 6 Sat
+  const diff = day === 0 ? -6 : 1 - day;
+  const m = new Date(d); m.setHours(0, 0, 0, 0); m.setDate(d.getDate() + diff);
+  return m;
+}
+
+function startOfToday(): Date { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+
+function countDoneInRange(history: Record<string, number>, frozenDates: string[], start: Date, end: Date): number {
+  let c = 0;
+  const cur = new Date(start);
+  while (cur.getTime() <= end.getTime()) {
+    const s = formatDate(cur);
+    if ((history[s] && history[s] > 0) || frozenDates.includes(s)) {
+      // freeze tidak hitung sebagai selesai untuk weekly_target, tapi jaga streak — ditangani di weekly logic
+      if (history[s] && history[s] > 0) c++;
+      else if (frozenDates.includes(s)) c++; // freeze dihitung sebagai selesai untuk weekly
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  return c;
+}
+
+function isWeeklyTargetMetForWeek(history: Record<string, number>, frozenDates: string[], weekStart: Date, target: number): boolean {
+  const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6);
+  const done = countDoneInRange(history, frozenDates, weekStart, weekEnd);
+  return done >= target;
+}
+
+// Calculate streaks and percentages — aware of frequency
 export function calculateStreak(
   history: Record<string, number>,
-  frozenDates: string[] = []
+  frozenDates: string[] = [],
+  habit?: Pick<Habit, 'frequency' | 'weeklyTargetDays'>
 ): {
   currentStreak: number;
   bestStreak: number;
@@ -101,6 +156,81 @@ export function calculateStreak(
     return history[dateStr] && history[dateStr] > 0;
   };
 
+  // Weekly-target streak (e.g. 4x/minggu): streak = minggu beruntun yang targetnya tercapai
+  const isWeekly = habit?.frequency === 'weekly_target';
+  const weeklyTarget = habit?.weeklyTargetDays ?? 4;
+
+  if (isWeekly) {
+    const today = startOfToday();
+    // completedCount tetap hitung hari selesai
+    let completedCount = 0;
+    const yA = new Date(today); yA.setDate(today.getDate() - 364);
+    const c = new Date(yA);
+    while (c.getTime() <= today.getTime()) {
+      const s = formatDate(c);
+      if (history[s] && history[s] > 0) completedCount++;
+      c.setDate(c.getDate() + 1);
+    }
+
+    // Current weekly streak: hitung mundur per minggu dari minggu ini
+    let currentStreak = 0;
+    let ws = getWeekStart(today);
+    // Jika minggu ini belum tercapai, tapi masih ada sisa hari, jangan pecah streak dulu — anggap grace
+    // Tapi kalau minggu ini sudah lewat 7 hari dan belum tercapai → pecah
+    // Sederhananya: mulai dari minggu ini, jika belum tercapai dan hari ini bukan akhir minggu, cek minggu lalu dulu
+    const thisWeekMet = isWeeklyTargetMetForWeek(history, frozenDates, ws, weeklyTarget);
+    const isEndOfWeek = today.getDay() === 0; // Minggu
+    if (!thisWeekMet && !isEndOfWeek) {
+      // minggu ini masih berjalan → jangan hitung pecah, mulai dari minggu lalu
+      ws = new Date(ws); ws.setDate(ws.getDate() - 7);
+    }
+    let cursor = new Date(ws);
+    while (true) {
+      if (isWeeklyTargetMetForWeek(history, frozenDates, cursor, weeklyTarget)) {
+        currentStreak++;
+        cursor = new Date(cursor); cursor.setDate(cursor.getDate() - 7);
+      } else {
+        break;
+      }
+    }
+
+    // Best weekly streak: scan 52 minggu ke belakang
+    let bestStreak = currentStreak;
+    let temp = 0;
+    const earliest = new Date(today); earliest.setDate(today.getDate() - 364);
+    let scan = getWeekStart(earliest);
+    const endWeek = getWeekStart(today);
+    while (scan.getTime() <= endWeek.getTime()) {
+      if (isWeeklyTargetMetForWeek(history, frozenDates, scan, weeklyTarget)) {
+        temp++;
+        if (temp > bestStreak) bestStreak = temp;
+      } else {
+        temp = 0;
+      }
+      scan = new Date(scan); scan.setDate(scan.getDate() + 7);
+    }
+
+    // Completion rate mingguan: 4 minggu terakhir
+    let weeksTotal = 0, weeksMet = 0;
+    let w4 = getWeekStart(today);
+    for (let i = 0; i < 4; i++) {
+      const s = new Date(w4); s.setDate(w4.getDate() - i * 7);
+      // hanya hitung minggu yang sudah selesai atau berjalan
+      weeksTotal++;
+      if (isWeeklyTargetMetForWeek(history, frozenDates, s, weeklyTarget)) weeksMet++;
+    }
+    const completionRate = weeksTotal ? Math.round((weeksMet / weeksTotal) * 100) : 0;
+
+    return {
+      currentStreak,
+      bestStreak,
+      completionRate,
+      totalCompleted: completedCount,
+      frozenCount: frozenDates.length,
+    };
+  }
+
+  // Daily / weekdays / weekends: streak harian (existing logic)
   const todayStr = getTodayString();
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
@@ -140,9 +270,9 @@ export function calculateStreak(
   yearAgo.setDate(yearAgo.getDate() - 364);
 
   const cur = new Date(yearAgo);
-  const today = new Date();
+  const today2 = new Date();
 
-  while (cur.getTime() <= today.getTime()) {
+  while (cur.getTime() <= today2.getTime()) {
     const s = formatDate(cur);
     if (isDoneOrFrozen(s)) {
       if (isActuallyDone(s)) {
@@ -162,7 +292,7 @@ export function calculateStreak(
   past30.setDate(past30.getDate() - 29);
   let past30Completed = 0;
   const pCur = new Date(past30);
-  while (pCur.getTime() <= today.getTime()) {
+  while (pCur.getTime() <= today2.getTime()) {
     const s = formatDate(pCur);
     if (isActuallyDone(s)) past30Completed++;
     pCur.setDate(pCur.getDate() + 1);

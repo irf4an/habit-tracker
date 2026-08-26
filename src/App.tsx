@@ -17,7 +17,7 @@ import { calculateBadges } from './achievements';
 import { sendHabitNotification, isInQuietHours } from './notification';
 import { playCheckSound, playCelebrationSound } from './sound';
 import { UserProfile, QuietHours } from './types';
-import { getTodayString, formatDate } from './utils';
+import { getTodayString, formatDate, canFreezeOnDate } from './utils';
 import { supabase, isSupabaseConfigured } from './supabase';
 import {
   fetchCloudHabits,
@@ -280,6 +280,12 @@ export function App() {
   });
 
   const handleStartPomodoro = (habit: Habit) => {
+    // Close other modals first to avoid backdrop stacking (blank hitam)
+    setIsModalOpen(false);
+    setShowProfile(false);
+    setShowAuth(false);
+    setShowAchievements(false);
+    setShowHelp(false);
     setPomodoroSession({
       habit,
       totalSeconds: 25 * 60,
@@ -467,15 +473,15 @@ export function App() {
     );
   };
 
-  // Toggle Streak Freeze for a habit on a date
+  // Toggle Streak Freeze — enforce 2x per 7 days
   const handleToggleFreeze = (habitId: string, dateStr: string) => {
     setHabits((prev) =>
       prev.map((h) => {
         if (h.id !== habitId) return h;
         const currentFrozen = h.frozenDates || [];
         const isFrozen = currentFrozen.includes(dateStr);
+        if (!isFrozen && !canFreezeOnDate(currentFrozen, dateStr)) return h;
         let nextFrozen: string[];
-
         if (isFrozen) {
           nextFrozen = currentFrozen.filter((d) => d !== dateStr);
         } else {

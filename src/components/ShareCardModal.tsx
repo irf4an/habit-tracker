@@ -14,7 +14,7 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ habit, onClose, 
   const cardRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
 
-  const streakStats = calculateStreak(habit.history, habit.frozenDates || []);
+  const streakStats = calculateStreak(habit.history, habit.frozenDates || [], habit);
   const todayStr = getTodayString();
   const isTodayDone = (habit.history[todayStr] || 0) >= (habit.targetValue || 1);
 

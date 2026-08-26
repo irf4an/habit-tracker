@@ -128,7 +128,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               </div>
               <div className={`p-3.5 rounded-xl border flex items-start gap-3 ${isDarkMode ? 'bg-[#0c0c12] border-[#1f1f2c]' : 'bg-zinc-50 border-zinc-200'}`}>
                 <Snowflake className="w-5 h-5 text-sky-400 shrink-0 mt-0.5" />
-                <div><h4 className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Bekukan streak (libur)</h4><p className={`text-xs mt-1 leading-relaxed ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Sakit atau bepergian? Ketuk ikon salju di kartu. Hari itu dihitung istirahat — streak tidak putus.</p></div>
+                <div><h4 className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Bekukan streak — maks 2×/minggu</h4><p className={`text-xs mt-1 leading-relaxed ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Sakit/libur? Ketuk ❄️ di kartu. Hari itu jadi istirahat, streak tidak putus. Kuota bergulir 2 kali per 7 hari — tooltip tombol tunjukkan sisa.</p></div>
               </div>
             </div>
           </div>

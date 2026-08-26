@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Habit } from '../types';
-import { getTodayString, getYearDays, calculateStreak } from '../utils';
-import { Check, Trash2, Edit3, Flame, Plus, Minus, Share2, Timer, Snowflake, Bell } from 'lucide-react';
+import { getTodayString, getYearDays, calculateStreak, canFreezeOnDate, freezeRemaining, FREEZE_WEEKLY_LIMIT } from '../utils';
+import { Check, Trash2, Edit3, Flame, Plus, Minus, Share2, Timer, Snowflake, Bell, Info, Pencil } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { playCheckSound, playUncheckSound } from '../sound';
 
@@ -39,10 +39,9 @@ export const HabitCard: React.FC<HabitCardProps> = ({
   const isTodayCompleted = isNumeric ? currentTodayVal >= targetVal : currentTodayVal === 1;
   const isTodayFrozen = (habit.frozenDates || []).includes(todayStr);
 
-  // Streak stats (aware of freeze)
   const streakStats = useMemo(
-    () => calculateStreak(habit.history, habit.frozenDates || []),
-    [habit.history, habit.frozenDates]
+    () => calculateStreak(habit.history, habit.frozenDates || [], habit),
+    [habit.history, habit.frozenDates, habit.frequency, habit.weeklyTargetDays]
   );
 
   // Selected cell for note/detail modal
@@ -87,9 +86,23 @@ export const HabitCard: React.FC<HabitCardProps> = ({
     });
   };
 
-  // Klik kotak heatmap sekarang hanya buka modal detail — tidak langsung toggle isi (mencegah isi acak saat tap random)
-  const handleCellClick = (dateStr: string) => {
-    if (isTodayCompleted && false) {} // keep ref
+  // Hari ini: 1-tap toggle langsung (anti-friction). Tanggal lampau/masa depan: buka modal detail (cegah isi acak)
+  const handleCellClick = (dateStr: string, e: React.MouseEvent | React.KeyboardEvent) => {
+    const isToday = dateStr === todayStr;
+    const requiresModal = e.shiftKey || isNumeric || !isToday;
+    if (!requiresModal && isToday) {
+      const cur = habit.history[dateStr] || 0;
+      const target = habit.targetValue || 1;
+      const isDone = habit.type === 'numeric' ? cur >= target : cur === 1;
+      if (isDone) {
+        playUncheckSound();
+      } else {
+        playCheckSound();
+        confetti({ particleCount: 30, spread: 45, origin: { y: 0.75 }, colors: [habit.color, '#ffffff', '#a78bfa'], disableForReducedMotion: true });
+      }
+      onToggleDate(habit.id, dateStr, isDone ? 0 : target);
+      return;
+    }
     setSelectedDate(dateStr);
     setNoteText(habit.notes?.[dateStr] || '');
     setCellVal(habit.history[dateStr] || 0);
@@ -181,26 +194,25 @@ export const HabitCard: React.FC<HabitCardProps> = ({
             </div>
           </div>
 
-          {/* Action Buttons Toolbar */}
-        <div className="flex items-center gap-1 shrink-0" role="toolbar" aria-label={`Aksi untuk ${habit.name}`}>
-            {onToggleFreeze && (
-              <button
-                type="button"
-                aria-label={isTodayFrozen ? `Batalkan freeze hari ini untuk ${habit.name}` : `Bekukan streak hari ini untuk ${habit.name}`}
-                aria-pressed={isTodayFrozen}
-                onClick={() => onToggleFreeze(habit.id, todayStr)}
-                className={`p-1.5 rounded-lg transition-colors cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] focus-visible:ring-offset-1 ${
-                  isTodayFrozen
-                    ? 'text-cyan-500 bg-cyan-500/15 border-cyan-500/30'
-                    : isDarkMode
-                    ? 'text-zinc-400 hover:text-cyan-300 hover:bg-cyan-950/20 border-transparent'
-                    : 'text-zinc-600 hover:text-cyan-700 hover:bg-cyan-50 border-zinc-200 bg-zinc-50'
-                }`}
-                title={isTodayFrozen ? 'Streak Freeze aktif hari ini (Klik untuk batal)' : 'Aktifkan Streak Freeze hari ini (Rest Day)'}
-              >
-                <Snowflake className="w-3.5 h-3.5" aria-hidden />
-              </button>
-            )}
+          <div className="flex items-center gap-1 shrink-0" role="toolbar" aria-label={`Aksi untuk ${habit.name}`}>
+            {onToggleFreeze && (() => {
+              const canFreeze = canFreezeOnDate(habit.frozenDates || [], todayStr);
+              const remaining = freezeRemaining(habit.frozenDates || [], todayStr);
+              const disabled = !isTodayFrozen && !canFreeze;
+              return (
+                <button
+                  type="button"
+                  disabled={disabled}
+                  aria-label={isTodayFrozen ? `Batalkan freeze ${habit.name} hari ini` : `Bekukan streak ${habit.name} — sisa ${remaining}/${FREEZE_WEEKLY_LIMIT} minggu ini`}
+                  aria-pressed={isTodayFrozen}
+                  onClick={() => onToggleFreeze(habit.id, todayStr)}
+                  className={`p-1.5 rounded-lg border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 disabled:opacity-40 disabled:cursor-not-allowed ${isTodayFrozen ? 'text-cyan-500 bg-cyan-500/15 border-cyan-500/30' : isDarkMode ? 'text-zinc-400 hover:text-cyan-300 hover:bg-cyan-950/20 border-transparent' : 'text-zinc-600 hover:text-cyan-700 hover:bg-cyan-50 border-zinc-200 bg-zinc-50'}`}
+                  title={isTodayFrozen ? `Beku aktif — sisa ${remaining}/${FREEZE_WEEKLY_LIMIT} minggu ini (klik batal)` : disabled ? `Kuota habis (maks ${FREEZE_WEEKLY_LIMIT}x/7 hari)` : `Bekukan hari ini — sisa ${remaining}/${FREEZE_WEEKLY_LIMIT} minggu ini`}
+                >
+                  <Snowflake className="w-3.5 h-3.5" aria-hidden />
+                </button>
+              );
+            })()}
             {onStartPomodoro && (
               <button
                 type="button"
@@ -302,9 +314,22 @@ export const HabitCard: React.FC<HabitCardProps> = ({
           )}
         </div>
 
-        {/* Tier 3: STATS ROW (Record & Completion Rate - Separate Row) */}
-        <div className={`text-[10.5px] font-mono font-light tracking-wide ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
-          Rekor: <span className={`font-normal ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>{streakStats.bestStreak}h</span> • {streakStats.completionRate}% (30h)
+        <div className={`flex items-center gap-1.5 text-[10.5px] font-mono font-light tracking-wide ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
+          <span>Rekor: <span className={`font-normal ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>{streakStats.bestStreak}h</span> • {streakStats.completionRate}% (30h)</span>
+          <button
+            type="button"
+            aria-label={`Tulis catatan hari ini untuk ${habit.name}${habit.notes?.[todayStr] ? ' — sudah ada catatan' : ''}`}
+            onClick={() => {
+              setSelectedDate(todayStr);
+              setNoteText(habit.notes?.[todayStr] || '');
+              setCellVal(habit.history[todayStr] || 0);
+            }}
+            className={`ml-1 p-1 rounded-md border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${habit.notes?.[todayStr] ? 'bg-amber-500/15 border-amber-500/30 text-amber-600' : isDarkMode ? 'border-transparent text-zinc-500 hover:text-zinc-200 hover:bg-white/5' : 'border-zinc-200 bg-zinc-50 text-zinc-500 hover:text-zinc-700'}`}
+            title={habit.notes?.[todayStr] ? `Catatan hari ini: "${habit.notes?.[todayStr]?.slice(0, 40)}" — klik edit` : 'Tulis catatan hari ini'}
+          >
+            <Pencil className="w-3 h-3" aria-hidden />
+          </button>
+          {habit.notes?.[todayStr] && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" aria-hidden />}
         </div>
       </div>
 
@@ -353,9 +378,9 @@ export const HabitCard: React.FC<HabitCardProps> = ({
                           aria-pressed={isDone || isFrozen}
                           aria-disabled={day.isFuture}
                           disabled={day.isFuture}
-                          onClick={() => handleCellClick(day.dateStr)}
+                          onClick={(ev) => handleCellClick(day.dateStr, ev as unknown as React.KeyboardEvent)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCellClick(day.dateStr); }
+                            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCellClick(day.dateStr, e as unknown as React.MouseEvent); }
                           }}
                           title={`${day.dateStr}${isFrozen ? ' [❄️ Streak Freeze]' : ''}${rawVal > 0 ? ` (${rawVal}${habit.unit ? ' ' + habit.unit : ''})` : ''}${hasNote ? ' [Note attached]' : ''}${isToday ? ' - Today' : ''}`}
                           className={`w-3 h-3 rounded-[2px] relative touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] focus-visible:ring-offset-1 focus-visible:ring-offset-transparent ${
@@ -453,9 +478,36 @@ export const HabitCard: React.FC<HabitCardProps> = ({
               <textarea id={`habit-day-note-${habit.id}-${selectedDate}`} rows={2} placeholder="Bagaimana progres kebiasaanmu hari ini?" value={noteText} onChange={(e) => setNoteText(e.target.value)} className={`w-full border rounded-lg p-2.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0e0e14] border-[#28283a] text-white placeholder-zinc-600' : 'bg-zinc-50 border-zinc-300 text-zinc-900 placeholder-zinc-400'}`} />
             </div>
 
-            <div className={`flex items-center justify-end gap-2 pt-2 border-t ${isDarkMode ? 'border-[#222230]' : 'border-zinc-200'}`}>
-              <button type="button" onClick={() => setSelectedDate(null)} className={`px-3 py-1.5 text-xs rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#1f1f2e]' : 'text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100'}`}>Batal</button>
-              <button type="button" onClick={saveCellDetails} className="px-4 py-1.5 text-xs font-semibold bg-[#8338ec] hover:bg-[#722ed1] text-white rounded-lg transition-all shadow-md shadow-[#8338ec]/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] focus-visible:ring-offset-2">Simpan</button>
+            <div className={`flex items-center justify-between gap-2 pt-2 border-t ${isDarkMode ? 'border-[#222230]' : 'border-zinc-200'}`}>
+              <div className="flex items-center">
+                {selectedDate && (() => {
+                  const isSelectedFrozen = (habit.frozenDates || []).includes(selectedDate);
+                  const canFreeze = canFreezeOnDate(habit.frozenDates || [], selectedDate);
+                  const remaining = freezeRemaining(habit.frozenDates || [], selectedDate);
+                  const disabled = !isSelectedFrozen && !canFreeze;
+                  return (
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      aria-label={isSelectedFrozen ? 'Batalkan bekukan hari ini' : `Bekukan hari ini — sisa ${remaining}/${FREEZE_WEEKLY_LIMIT}`}
+                      onClick={() => {
+                        if (disabled) return;
+                        onToggleFreeze?.(habit.id, selectedDate);
+                        // refresh frozen visual without closing modal
+                        setSelectedDate(selectedDate);
+                      }}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 disabled:opacity-40 ${isSelectedFrozen ? 'bg-cyan-500/15 border-cyan-500/30 text-cyan-600' : 'bg-sky-500/10 border-sky-500/20 text-sky-600 hover:bg-sky-500/15'}`}
+                      title={isSelectedFrozen ? 'Sudah dibekukan — klik batal' : disabled ? `Kuota habis (${FREEZE_WEEKLY_LIMIT}x/7 hari)` : `Bekukan — sisa ${remaining}/${FREEZE_WEEKLY_LIMIT}/minggu`}
+                    >
+                      <Snowflake className="w-3.5 h-3.5" aria-hidden /> {isSelectedFrozen ? 'Batal beku' : 'Bekukan'}
+                    </button>
+                  );
+                })()}
+              </div>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setSelectedDate(null)} className={`px-3 py-1.5 text-xs rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#1f1f2e]' : 'text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100'}`}>Batal</button>
+                <button type="button" onClick={saveCellDetails} className="px-4 py-1.5 text-xs font-semibold bg-[#8338ec] hover:bg-[#722ed1] text-white rounded-lg transition-all shadow-md shadow-[#8338ec]/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] focus-visible:ring-offset-2">Simpan</button>
+              </div>
             </div>
           </div>
         </div>

@@ -20,9 +20,9 @@ export interface Habit {
   category?: string;
   archived?: boolean;
 
-  // Streak Freeze & Rest Days
+  // Streak Freeze & Rest Days — quota 2x per 7 hari bergulir
   frozenDates?: string[]; // array of "YYYY-MM-DD" protected by freeze
-  streakFreezes?: number; // available freeze tokens
+  streakFreezes?: number; // legacy: available freeze tokens (diabaikan, quota sekarang mingguan)
 
   // Reminder Notification features
   reminderEnabled?: boolean;

@@ -11,7 +11,7 @@ export function calculateBadges(habits: Habit[]): {
 } {
   const habitStats = habits.map((h) => ({
     habit: h,
-    ...calculateStreak(h.history),
+    ...calculateStreak(h.history, h.frozenDates || [], h),
   }));
 
   const totalCompletions = habitStats.reduce((acc, s) => acc + s.totalCompleted, 0);

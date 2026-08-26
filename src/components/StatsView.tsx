@@ -21,11 +21,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ habits, isDarkMode = true 
   const reduceMotion = useReducedMotion();
 
   const stats = useMemo(
-    () =>
-      habits.map((h) => ({
-        habit: h,
-        ...calculateStreak(h.history, h.frozenDates || []),
-      })),
+    () => habits.map((h) => ({ habit: h, ...calculateStreak(h.history, h.frozenDates || [], h) })),
     [habits]
   );
 
