@@ -26,16 +26,9 @@ import {
   fetchCloudProfile,
   syncProfileToCloud,
 } from './cloudSync';
-import {
-  Calendar as CalendarIcon,
-  BarChart3,
-  SlidersHorizontal,
-  HelpCircle,
-  Sparkles,
-  Sun,
-  Moon,
-  User,
-} from 'lucide-react';
+import { HelpCircle, Sparkles, Sun, Moon, User } from 'lucide-react';
+import { MaterialIcon } from './components/MaterialIcon';
+import { FluentOutlineIcon } from './components/FluentOutlineIcon';
 import confetti from 'canvas-confetti';
 
 const STORAGE_KEY = 'minimal_habit_tracker_data_v2';
@@ -655,15 +648,15 @@ export function App() {
           </div>
           <nav aria-label="Navigasi utama" className={`hidden sm:flex items-center p-1 rounded-full border shadow-inner ${isDarkMode ? 'bg-[#14141d] border-[#8338ec]/35' : 'bg-zinc-100 border-[#8338ec]/25'}`} style={{ boxShadow: `0 0 16px rgba(131,56,236,0.12)` }}>
             <button type="button" aria-current={activeTab === 'calendar' ? 'page' : undefined} onClick={() => setActiveTab('calendar')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${activeTab === 'calendar' ? 'bg-white text-zinc-950 font-semibold shadow-md' : isDarkMode ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-500 hover:text-zinc-900'}`}>
-              <CalendarIcon className="w-3.5 h-3.5" aria-hidden />
+              <MaterialIcon name="calendar_month" size={16} />
               Calendar
             </button>
             <button type="button" aria-current={activeTab === 'statistics' ? 'page' : undefined} onClick={() => setActiveTab('statistics')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${activeTab === 'statistics' ? 'bg-white text-zinc-950 font-semibold shadow-md' : isDarkMode ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-500 hover:text-zinc-900'}`}>
-              <BarChart3 className="w-3.5 h-3.5" aria-hidden />
+              <MaterialIcon name="bar_chart" size={16} />
               Statistics
             </button>
             <button type="button" aria-current={activeTab === 'manage' ? 'page' : undefined} onClick={() => setActiveTab('manage')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${activeTab === 'manage' ? 'bg-white text-zinc-950 font-semibold shadow-md' : isDarkMode ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-500 hover:text-zinc-900'}`}>
-              <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden />
+              <MaterialIcon name="tune" size={16} />
               Manage
             </button>
           </nav>
@@ -682,20 +675,21 @@ export function App() {
         {/* Category Filter & Full View Toggle Bar */}
         {activeTab === 'calendar' && (
           <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
-            {/* Category Filter Pills */}
+            {/* Category Filter Pills — Material Icons clean inline SVG */}
             <div className="flex items-center gap-1.5 flex-wrap">
               {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat!)}
-                  className={`px-3 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer border ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer border inline-flex items-center gap-1.5 leading-none ${
                     selectedCategory === cat
-                      ? 'bg-[#8338ec] border-[#8338ec] text-white font-medium shadow-md shadow-[#8338ec]/25'
+                      ? 'bg-[#8338ec] border-[#8338ec] text-white font-semibold shadow-md shadow-[#8338ec]/25'
                       : isDarkMode
                       ? 'bg-[#14141c] border-[#8338ec]/25 text-zinc-400 hover:text-zinc-200'
                       : 'bg-white border-zinc-300 text-zinc-600 hover:text-zinc-900 hover:border-zinc-400'
                   }`}
                 >
+                  <MaterialIcon name={cat === 'All' ? 'apps' : 'label'} size={14} />
                   {cat}
                 </button>
               ))}
@@ -740,8 +734,10 @@ export function App() {
             ))}
 
             {filteredHabits.length === 0 && (
-              <div className={`border rounded-2xl p-8 sm:p-10 text-center ${isDarkMode ? 'bg-[#111116] border-[#1e1e28]' : 'bg-white border-zinc-200'}`}>
-                <div className="text-3xl mb-3" aria-hidden>🌱</div>
+              <div className={`border rounded-2xl p-8 sm:p-10 text-center transition-all ${isDarkMode ? 'bg-[#111116] border-[#1e1e28]' : 'bg-white border-zinc-200 shadow-sm'}`}>
+                <div className="flex items-center justify-center mb-3 text-[#8338ec]">
+                  <FluentOutlineIcon name="plant" size={36} color="#8338ec" />
+                </div>
                 <h3 className={`text-base font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
                   {habits.length === 0 ? 'Belum ada kebiasaan' : 'Tidak ada yang cocok'}
                 </h3>
@@ -752,9 +748,10 @@ export function App() {
                 </p>
                 <button
                   onClick={() => { setEditingHabit(null); setIsModalOpen(true); }}
-                  className="px-5 py-2.5 bg-[#8338ec] hover:bg-[#722ed1] text-white rounded-xl text-sm font-semibold cursor-pointer shadow-lg shadow-[#8338ec]/20 transition-all"
+                  className="px-5 py-2.5 bg-[#8338ec] hover:bg-[#722ed1] text-white rounded-full text-xs font-bold cursor-pointer shadow-lg shadow-[#8338ec]/25 active:scale-95 transition-all inline-flex items-center gap-1.5"
                 >
-                  Buat kebiasaan pertama
+                  <MaterialIcon name="add" size={16} color="#ffffff" />
+                  <span>Buat kebiasaan pertama</span>
                 </button>
                 {habits.length === 0 && (
                   <p className={`text-xs mt-3 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>Tips: tekan N di keyboard untuk cepat.</p>

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { UserProfile, Habit } from '../types';
 import { calculateBadges } from '../achievements';
-import { X, User, Trophy, Flame, CheckCircle2, Edit2, Check, Cloud } from 'lucide-react';
+import { X, Trophy, Flame, CheckCircle2, Edit2, Check, Cloud } from 'lucide-react';
+import { IOSGlyphIcon } from './IOSGlyphIcon';
 import confetti from 'canvas-confetti';
 
 interface ProfileModalProps {
@@ -74,7 +75,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         {/* Top Header */}
         <div className={`flex items-center justify-between border-b pb-3 mb-5 ${isDarkMode ? 'border-[#20202e]' : 'border-zinc-200'}`}>
           <div className="flex items-center gap-2">
-            <User className="w-5 h-5 text-[#8338ec]" />
+            <IOSGlyphIcon name="person_fill" size={24} color="#8338ec" />
             <h2 className={`text-base sm:text-lg font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
               Profil Pengguna
             </h2>

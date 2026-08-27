@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Habit } from '../types';
-import { Plus, Trash2, Edit3, MoveUp, MoveDown, Download, Upload, RefreshCw, Archive, ArchiveRestore, FileSpreadsheet } from 'lucide-react';
+import { MaterialIcon } from './MaterialIcon';
+import { FluentOutlineIcon } from './FluentOutlineIcon';
 import { exportHabitsToCSV } from '../utils';
 import { requestNotificationPermission, sendHabitNotification } from '../notification';
 import { QuietHours } from '../types';
@@ -81,10 +82,9 @@ export const ManageView: React.FC<ManageViewProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            {/* Archive Toggle Button */}
             <button
               onClick={() => setShowArchived((v) => !v)}
-              className={`flex items-center justify-center p-2 sm:px-3 sm:py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 sm:px-3 sm:py-2 p-2.5 rounded-full text-xs font-semibold border transition-all cursor-pointer leading-none ${
                 showArchived
                   ? 'bg-amber-500/20 border-amber-500 text-amber-300'
                   : isDarkMode
@@ -93,20 +93,16 @@ export const ManageView: React.FC<ManageViewProps> = ({
               }`}
               title={showArchived ? 'Melihat Arsip' : `Arsip Kebiasaan (${archivedHabits.length})`}
             >
-              <Archive className="w-4 h-4" />
-              <span className="hidden sm:inline ml-1.5">
-                {showArchived ? 'Diarsipkan' : `Arsip (${archivedHabits.length})`}
-              </span>
+              <MaterialIcon name="archive" size={16} />
+              <span className="hidden sm:inline">{showArchived ? 'Diarsipkan' : `Arsip (${archivedHabits.length})`}</span>
             </button>
-
-            {/* Add Habit Button */}
             <button
               onClick={onAddHabit}
-              className="flex items-center justify-center p-2 sm:px-3.5 sm:py-1.5 bg-[#8338ec] hover:bg-[#722ed1] text-white rounded-xl text-xs font-bold cursor-pointer active:scale-95 transition-all shadow-md shadow-[#8338ec]/25"
+              className="flex items-center justify-center gap-1 sm:px-3.5 sm:py-2 p-2.5 bg-[#8338ec] hover:bg-[#722ed1] text-white rounded-full text-xs font-bold cursor-pointer active:scale-95 transition-all shadow-md shadow-[#8338ec]/25 leading-none"
               title="Tambah Kebiasaan Baru"
             >
-              <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span className="hidden sm:inline ml-1">Tambah</span>
+              <MaterialIcon name="add" size={16} color="#ffffff" />
+              <span className="hidden sm:inline">Tambah</span>
             </button>
           </div>
         </div>
@@ -121,42 +117,37 @@ export const ManageView: React.FC<ManageViewProps> = ({
                 aria-label={`${idx + 1}. ${habit.name} — ${completedCount} selesai`}
                 className={`border rounded-2xl p-3.5 sm:p-4 transition-all flex flex-col gap-2.5 focus-within:ring-2 focus-within:ring-[#8338ec] ${isDarkMode ? 'bg-[#0f0f15] border-[#1e1e28] hover:border-[#8338ec]/40' : 'bg-zinc-50 border-zinc-200 hover:border-zinc-300'}`}
               >
-                {/* Tier 1 (Top): Index + Emoji + Name + Category + Goal */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-[10.5px] font-mono font-bold shrink-0 ${
-                      isDarkMode ? 'bg-[#181824] text-zinc-400' : 'bg-zinc-200 text-zinc-700'
-                    }`}>
-                      {idx + 1}
-                    </span>
-
-                    <span className="text-xl select-none shrink-0">{habit.emoji}</span>
-
-                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                      <h4 className={`font-bold text-sm sm:text-base leading-snug truncate ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
-                        {habit.name}
-                      </h4>
-                      <span
-                        className="w-2 h-2 rounded-full inline-block shrink-0"
-                        style={{ backgroundColor: habit.color }}
-                      />
-                      {habit.category && (
-                        <span className={`text-[9.5px] px-2 py-0.5 rounded-full font-medium border shrink-0 ${
-                          isDarkMode ? 'text-zinc-300 bg-[#161622] border-[#272738]' : 'text-zinc-600 bg-white border-zinc-200'
-                        }`}>
-                          {habit.category}
-                        </span>
-                      )}
-                      {habit.type === 'numeric' && (
-                        <span className="text-[9.5px] font-mono text-[#8338ec] bg-[#8338ec]/10 border border-[#8338ec]/20 px-2 py-0.5 rounded-full shrink-0 font-semibold">
-                          Target: {habit.targetValue} {habit.unit}
-                        </span>
-                      )}
-                    </div>
+                {/* Tier 1: Index + Emoji + Name + pills */}
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10.5px] font-mono font-bold shrink-0 ${
+                    isDarkMode ? 'bg-[#181824] text-zinc-400' : 'bg-zinc-200 text-zinc-700'
+                  }`}>
+                    {idx + 1}
+                  </span>
+                  <span className="text-xl select-none shrink-0">{habit.emoji}</span>
+                  <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
+                    <h4 className={`font-bold text-sm leading-snug truncate ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
+                      {habit.name}
+                    </h4>
+                    <span className="w-2 h-2 rounded-full inline-block shrink-0" style={{ backgroundColor: habit.color }} />
+                    {habit.category && (
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border shrink-0 inline-flex items-center gap-1 leading-none ${
+                        isDarkMode ? 'text-zinc-300 bg-[#161622] border-[#272738]' : 'text-zinc-600 bg-white border-zinc-200'
+                      }`}>
+                        <MaterialIcon name="label" size={12} />
+                        {habit.category}
+                      </span>
+                    )}
+                    {habit.type === 'numeric' && (
+                      <span className="text-[10px] font-mono text-[#8338ec] bg-[#8338ec]/10 border border-[#8338ec]/20 px-2 py-0.5 rounded-full shrink-0 font-medium inline-flex items-center gap-1 leading-none">
+                        <MaterialIcon name="flag" size={12} color="#8338ec" />
+                        Target: {habit.targetValue} {habit.unit}
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* Tier 2 (Bottom): Sub-info on Left, Action Toolbar on Right */}
+                {/* Tier 2: Sub-info on Left, Action Toolbar on Right */}
                 <div className={`flex items-center justify-between gap-2 pt-2 border-t ${
                   isDarkMode ? 'border-[#1b1b26]' : 'border-zinc-200/70'
                 }`}>
@@ -167,66 +158,70 @@ export const ManageView: React.FC<ManageViewProps> = ({
                   </div>
 
                   {/* Action Toolbar Buttons */}
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     {!showArchived && (
                       <>
                         <button
                           disabled={idx === 0}
                           onClick={() => moveHabit(idx, 'up')}
-                          className={`p-1.5 disabled:opacity-20 rounded-lg transition-colors cursor-pointer border ${
+                          className={`w-8 h-8 flex items-center justify-center disabled:opacity-20 rounded-full transition-colors cursor-pointer border leading-none ${
                             isDarkMode
-                              ? 'text-zinc-400 hover:text-white hover:bg-[#1a1a26] border-transparent'
-                              : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200 border-zinc-200 bg-white'
+                              ? 'text-zinc-400 hover:text-white hover:bg-[#1a1a26] border-[#262636] bg-[#14141d]'
+                              : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 border-zinc-300 bg-white shadow-xs'
                           }`}
                           title="Geser ke atas"
                         >
-                          <MoveUp className="w-3.5 h-3.5" />
+                          <MaterialIcon name="arrow_upward" size={16} />
                         </button>
                         <button
                           disabled={idx === displayedHabits.length - 1}
                           onClick={() => moveHabit(idx, 'down')}
-                          className={`p-1.5 disabled:opacity-20 rounded-lg transition-colors cursor-pointer border ${
+                          className={`w-8 h-8 flex items-center justify-center disabled:opacity-20 rounded-full transition-colors cursor-pointer border leading-none ${
                             isDarkMode
-                              ? 'text-zinc-400 hover:text-white hover:bg-[#1a1a26] border-transparent'
-                              : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200 border-zinc-200 bg-white'
+                              ? 'text-zinc-400 hover:text-white hover:bg-[#1a1a26] border-[#262636] bg-[#14141d]'
+                              : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 border-zinc-300 bg-white shadow-xs'
                           }`}
                           title="Geser ke bawah"
                         >
-                          <MoveDown className="w-3.5 h-3.5" />
+                          <MaterialIcon name="arrow_downward" size={16} />
                         </button>
                       </>
                     )}
 
                     <button
                       onClick={() => onToggleArchive(habit.id)}
-                      className={`p-1.5 rounded-lg transition-colors cursor-pointer border ${
+                      className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors cursor-pointer border leading-none ${
                         isDarkMode
-                          ? 'text-zinc-400 hover:text-amber-300 hover:bg-amber-950/30 border-transparent'
-                          : 'text-zinc-600 hover:text-amber-600 hover:bg-amber-50 border-zinc-200 bg-white'
+                          ? 'text-zinc-400 hover:text-amber-300 hover:bg-amber-950/30 border-[#262636] bg-[#14141d]'
+                          : 'text-zinc-600 hover:text-amber-600 hover:bg-amber-50 border-zinc-300 bg-white shadow-xs'
                       }`}
                       title={habit.archived ? 'Kembalikan ke daftar utama' : 'Arsipkan kebiasaan'}
                     >
-                      {habit.archived ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
+                      <MaterialIcon name={habit.archived ? 'unarchive' : 'archive'} size={16} />
                     </button>
 
                     <button
                       onClick={() => onEditHabit(habit)}
-                      className={`p-1.5 rounded-lg transition-colors cursor-pointer border ${
+                      className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors cursor-pointer border leading-none ${
                         isDarkMode
-                          ? 'text-zinc-400 hover:text-white hover:bg-[#1a1a26] border-transparent'
-                          : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200 border-zinc-200 bg-white'
+                          ? 'text-zinc-400 hover:text-white hover:bg-[#1a1a26] border-[#262636] bg-[#14141d]'
+                          : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 border-zinc-300 bg-white shadow-xs'
                       }`}
                       title="Ubah pengaturan"
                     >
-                      <Edit3 className="w-3.5 h-3.5" />
+                      <MaterialIcon name="edit" size={16} />
                     </button>
 
                     <button
                       onClick={() => onDeleteHabit(habit.id)}
-                      className="p-1.5 text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer border border-transparent"
+                      className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors cursor-pointer border leading-none ${
+                        isDarkMode
+                          ? 'text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10 border-[#262636] bg-[#14141d]'
+                          : 'text-zinc-600 hover:text-rose-600 hover:bg-rose-50 border-zinc-300 bg-white shadow-xs'
+                      }`}
                       title="Hapus kebiasaan"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <MaterialIcon name="delete" size={16} />
                     </button>
                   </div>
                 </div>
@@ -235,8 +230,11 @@ export const ManageView: React.FC<ManageViewProps> = ({
           })}
 
           {displayedHabits.length === 0 && (
-            <div className={`text-center py-8 text-sm rounded-xl border border-dashed ${isDarkMode ? 'text-zinc-400 border-zinc-800 bg-[#0f0f16]' : 'text-zinc-600 border-zinc-300 bg-zinc-50'}`}>
-              {showArchived ? 'Arsip kosong — kebiasaan yang diarsipkan akan muncul di sini.' : 'Belum ada kebiasaan aktif. Ketuk + Tambah untuk mulai.'}
+            <div className={`text-center py-10 px-4 text-sm rounded-2xl border border-dashed flex flex-col items-center justify-center gap-2 ${isDarkMode ? 'text-zinc-400 border-zinc-800 bg-[#0f0f16]' : 'text-zinc-600 border-zinc-300 bg-zinc-50'}`}>
+              <FluentOutlineIcon name="book_open" size={32} color={isDarkMode ? '#a78bfa' : '#8338ec'} />
+              <p className="text-xs max-w-xs">
+                {showArchived ? 'Arsip kosong — kebiasaan yang diarsipkan akan muncul di sini.' : 'Belum ada kebiasaan aktif. Ketuk + Tambah untuk mulai.'}
+              </p>
             </div>
           )}
         </div>
@@ -280,42 +278,42 @@ export const ManageView: React.FC<ManageViewProps> = ({
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={onExport}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all border leading-none ${
               isDarkMode
                 ? 'bg-[#1b1b26] hover:bg-[#262635] text-zinc-200 hover:text-white border-[#2d2d3d]'
                 : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border-zinc-300'
             }`}
           >
-            <Download className="w-3.5 h-3.5" />
+            <MaterialIcon name="download" size={16} />
             Backup JSON
           </button>
           <button
             onClick={() => exportHabitsToCSV(habits)}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all border leading-none ${
               isDarkMode
                 ? 'bg-[#1b1b26] hover:bg-[#262635] text-emerald-400 hover:text-emerald-300 border-[#2d2d3d]'
                 : 'bg-zinc-100 hover:bg-zinc-200 text-emerald-600 border-zinc-300'
             }`}
           >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <MaterialIcon name="table_view" size={16} />
             Export CSV
           </button>
           <button
             onClick={onImport}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all border leading-none ${
               isDarkMode
                 ? 'bg-[#1b1b26] hover:bg-[#262635] text-zinc-200 hover:text-white border-[#2d2d3d]'
                 : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border-zinc-300'
             }`}
           >
-            <Upload className="w-3.5 h-3.5" />
+            <MaterialIcon name="upload" size={16} />
             Pulihkan Data
           </button>
           <button
             onClick={onResetSample}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-xl text-xs font-semibold cursor-pointer transition-all sm:ml-auto"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-full text-xs font-semibold cursor-pointer transition-all sm:ml-auto leading-none"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <MaterialIcon name="refresh" size={16} />
             Reset Contoh
           </button>
         </div>

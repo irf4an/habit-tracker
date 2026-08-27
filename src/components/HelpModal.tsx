@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Keyboard, X, Command, MousePointerClick } from 'lucide-react';
+import { FluentOutlineIcon } from './FluentOutlineIcon';
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -27,17 +27,17 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, isDarkMod
             : `0 20px 50px rgba(0,0,0,0.15)`,
         }}
       >
-        {/* Header */}
+        {/* Header with Fluent Sparkle & Dismiss */}
         <div className={`flex items-center justify-between border-b pb-3 mb-4 ${isDarkMode ? 'border-[#20202e]' : 'border-zinc-200'}`}>
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#8338ec]" />
+          <div className="flex items-center gap-2.5">
+            <FluentOutlineIcon name="sparkle" size={24} color="#8338ec" />
             <h3 className={`text-base font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
               Panduan & Shortcut
             </h3>
           </div>
 
-          <button type="button" aria-label="Tutup panduan" onClick={onClose} className={`p-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#1e1e2c]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'}`}>
-            <X className="w-4 h-4" aria-hidden />
+          <button type="button" aria-label="Tutup panduan" onClick={onClose} className={`p-1.5 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#1e1e2c]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'}`}>
+            <FluentOutlineIcon name="dismiss" size={20} />
           </button>
         </div>
         <div className="space-y-3">
@@ -97,7 +97,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, isDarkMod
           </div>
 
           <div className="pt-2">
-            <button type="button" onClick={onClose} className="w-full py-2.5 bg-[#8338ec] hover:bg-[#722ed1] text-white rounded-xl text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] focus-visible:ring-offset-2">Mengerti</button>
+            <button type="button" onClick={onClose} className="w-full py-2.5 bg-[#8338ec] hover:bg-[#722ed1] text-white rounded-xl text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] focus-visible:ring-offset-2 cursor-pointer transition-all">Mengerti</button>
           </div>
         </div>
       </div>

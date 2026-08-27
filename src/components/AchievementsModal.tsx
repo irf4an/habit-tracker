@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Habit } from '../types';
 import { calculateBadges } from '../achievements';
-import { Trophy, Award, Lock, Sparkles, X, Flame, Zap } from 'lucide-react';
+import { FluentOutlineIcon } from './FluentOutlineIcon';
 
 interface AchievementsModalProps {
   isOpen: boolean;
@@ -50,11 +50,11 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
           boxShadow: isDarkMode ? `0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(131,56,236,0.18)` : `0 20px 50px rgba(0,0,0,0.15)`,
         }}
       >
-        {/* Header with Close */}
+        {/* Header with Fluent Trophy & Dismiss */}
         <div className={`flex items-center justify-between border-b pb-4 mb-5 ${isDarkMode ? 'border-[#20202e]' : 'border-zinc-200'}`}>
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-xl text-amber-400">
-              <Trophy className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <FluentOutlineIcon name="trophy" size={24} color="#f59e0b" />
             </div>
             <div>
               <h2 className={`text-xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
@@ -66,8 +66,8 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
             </div>
           </div>
 
-          <button type="button" aria-label="Tutup pencapaian" onClick={onClose} className={`p-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#1e1e2c]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'}`}>
-            <X className="w-5 h-5" aria-hidden />
+          <button type="button" aria-label="Tutup pencapaian" onClick={onClose} className={`p-1.5 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#1e1e2c]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'}`}>
+            <FluentOutlineIcon name="dismiss" size={20} />
           </button>
         </div>
         <div className={`p-4 rounded-2xl border mb-6 relative overflow-hidden ${
@@ -154,7 +154,11 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
                     : 'bg-zinc-200 border border-zinc-300 grayscale'
                 }`}
               >
-                {badge.unlocked ? badge.icon : <Lock className={`w-4 h-4 ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`} />}
+                {badge.unlocked ? (
+                  badge.icon
+                ) : (
+                  <FluentOutlineIcon name="lock_closed" size={20} className={isDarkMode ? 'text-zinc-500' : 'text-zinc-400'} />
+                )}
               </div>
 
               <div className="flex-1 min-w-0">
