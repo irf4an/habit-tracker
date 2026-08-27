@@ -121,7 +121,7 @@ export const HabitModal: React.FC<HabitModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm modal-overlay duration-150"
       role="dialog"
       aria-modal="true"
       aria-label={initialHabit ? 'Ubah kebiasaan' : 'Buat kebiasaan baru'}
@@ -130,7 +130,7 @@ export const HabitModal: React.FC<HabitModalProps> = ({
       <div
         role="document"
         onClick={(e) => e.stopPropagation()}
-        className={`border rounded-2xl w-full max-w-lg p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto ${
+        className={`border rounded-2xl w-full modal-card max-w-lg p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto ${
           isDarkMode ? 'bg-[#14141c] border-[#8338ec]/35 text-white' : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'
         }`}
         style={{
@@ -140,10 +140,10 @@ export const HabitModal: React.FC<HabitModalProps> = ({
         <div className={`flex items-center justify-between mb-5 border-b pb-3 ${isDarkMode ? 'border-[#222230]' : 'border-zinc-200'}`}>
           <div>
             <h2 className={`text-xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
-              {initialHabit ? 'Edit Habit' : 'Create New Habit'}
+              {initialHabit ? 'Ubah kebiasaan' : 'Buat kebiasaan baru yuk ✨'}
             </h2>
-            <p className={`text-xs font-mono mt-0.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
-              Customize tracking targets, frequency, and visual style.
+            <p className={`text-xs mt-0.5 leading-relaxed ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
+              {initialHabit ? 'Sesuaikan lagi biar makin pas sama kamu.' : 'Mulai kecil aja dulu, yang penting jalan terus.'}
             </p>
           </div>
           <button
@@ -158,11 +158,11 @@ export const HabitModal: React.FC<HabitModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="habit-title" className={`block text-sm font-bold mb-1.5 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Apa kebiasaannya? <span aria-hidden className="text-rose-500">*</span></label>
-            <input id="habit-title" type="text" required autoFocus placeholder="Mis. Olahraga pagi" value={name} onChange={(e) => setName(e.target.value)} className={`w-full border rounded-xl px-4 py-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0c0c11] border-[#262638] text-white placeholder-zinc-500' : 'bg-zinc-50 border-zinc-300 text-zinc-900 placeholder-zinc-400'}`} />
+            <label htmlFor="habit-title" className={`block text-sm font-bold mb-1.5 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Kebiasaan apa yang mau kamu jaga? <span aria-hidden className="text-rose-500">*</span></label>
+            <input id="habit-title" type="text" required autoFocus placeholder="Mis. Minum air, baca 10 halaman..." value={name} onChange={(e) => setName(e.target.value)} className={`w-full border rounded-xl px-4 py-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0c0c11] border-[#262638] text-white placeholder-zinc-500' : 'bg-zinc-50 border-zinc-300 text-zinc-900 placeholder-zinc-400'}`} />
           </div>
           <div>
-            <p className={`block text-xs font-mono uppercase tracking-wider mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Pilih ikon</p>
+            <p className={`block text-xs font-medium mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Pilih ikon biar makin kamu banget</p>
             <div className="flex items-center gap-1.5 flex-wrap">
               {PRESET_EMOJIS.slice(0, 8).map((em) => (
                 <button type="button" key={em} aria-label={`Pilih ${em}`} aria-pressed={emoji === em} onClick={() => setEmoji(em)} className={`w-9 h-9 text-base rounded-xl flex items-center justify-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${emoji === em ? 'bg-[#8338ec]/20 border-2 border-[#8338ec] scale-105' : isDarkMode ? 'bg-[#1a1a24] border border-[#262636] hover:bg-[#252535]' : 'bg-zinc-100 border border-zinc-300 hover:bg-zinc-200'}`}>{em}</button>
@@ -176,7 +176,7 @@ export const HabitModal: React.FC<HabitModalProps> = ({
             aria-expanded={showAdvanced}
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-xs font-semibold cursor-pointer ${isDarkMode ? 'bg-[#0d0d13] border-[#20202e] text-zinc-300 hover:text-white' : 'bg-zinc-50 border-zinc-200 text-zinc-700'}`}
           >
-            <span className="flex items-center gap-1.5"><Sliders className="w-3.5 h-3.5" /> Pengaturan lanjutan</span>
+            <span className="flex items-center gap-1.5"><Sliders className="w-3.5 h-3.5" /> Mau diatur lebih detail?</span>
             <span className={`transition-transform ${showAdvanced ? 'rotate-180' : ''}`}>▾</span>
           </button>
           {showAdvanced && (
@@ -194,9 +194,9 @@ export const HabitModal: React.FC<HabitModalProps> = ({
               }`}
             >
               <div className="flex items-center gap-1.5 font-semibold text-xs mb-1">
-                <span>✓ Simple Yes/No</span>
+                <span>✓ Sekali centang</span>
               </div>
-              <p className={`text-[11px] font-mono ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Tandai selesai / belum per hari</p>
+              <p className={`text-[11px] ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Cukup tandai selesai hari itu</p>
             </button>
 
             <button
@@ -212,27 +212,27 @@ export const HabitModal: React.FC<HabitModalProps> = ({
             >
               <div className="flex items-center gap-1.5 font-semibold text-xs mb-1">
                 <Hash className="w-3.5 h-3.5 text-[#8338ec]" />
-                <span>Target angka</span>
+                <span>Punya target angka</span>
               </div>
-              <p className={`text-[11px] font-mono ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Mis. 20 halaman, 30 menit</p>
+              <p className={`text-[11px] ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Mis. 20 halaman / 30 menit</p>
             </button>
           </div>
 
           {habitType === 'numeric' && (
             <div className={`grid grid-cols-2 gap-3 p-3 rounded-xl border ${isDarkMode ? 'bg-[#111119] border-[#252538]' : 'bg-zinc-50 border-zinc-200'}`}>
               <div>
-                <label htmlFor="habit-target" className={`block text-[11px] font-mono mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Target harian</label>
+                <label htmlFor="habit-target" className={`block text-[11px] mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Target harian</label>
                 <input id="habit-target" type="number" inputMode="numeric" min={1} value={targetValue} onChange={(e) => setTargetValue(Math.max(1, parseInt(e.target.value) || 1))} className={`w-full border rounded-lg px-3 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0a0a0f] border-[#28283c] text-white' : 'bg-white border-zinc-300 text-zinc-900'}`} />
               </div>
               <div>
-                <label htmlFor="habit-unit" className={`block text-[11px] font-mono mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Satuan</label>
+                <label htmlFor="habit-unit" className={`block text-[11px] mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Satuannya apa?</label>
                 <input id="habit-unit" type="text" placeholder="halaman, menit, ml, km" value={unit} onChange={(e) => setUnit(e.target.value)} className={`w-full border rounded-lg px-3 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0a0a0f] border-[#28283c] text-white' : 'bg-white border-zinc-300 text-zinc-900'}`} />
               </div>
             </div>
           )}
 
           <div>
-            <p className={`block text-xs font-mono uppercase tracking-wider mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Jadwal</p>
+            <p className={`block text-xs font-medium mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Mau dijadwalkan kapan?</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
                 { id: 'everyday', label: 'Setiap hari' },
@@ -264,13 +264,13 @@ export const HabitModal: React.FC<HabitModalProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="habit-category" className={`block text-xs font-mono uppercase tracking-wider mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Kategori</label>
+              <label htmlFor="habit-category" className={`block text-xs font-medium mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Masuk kategori apa?</label>
               <select id="habit-category" value={category} onChange={(e) => setCategory(e.target.value)} className={`w-full border rounded-xl px-3 py-2 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0c0c11] border-[#262638] text-white' : 'bg-white border-zinc-300 text-zinc-900'}`}>
                 {PRESET_CATEGORIES.map((cat) => (<option key={cat} value={cat}>{cat}</option>))}
               </select>
             </div>
             <div>
-              <p className={`block text-xs font-mono uppercase tracking-wider mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Warna</p>
+              <p className={`block text-xs font-medium mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Warna favoritmu?</p>
               <div className="flex items-center gap-2 flex-wrap pt-1">
                 {PRESET_COLORS.map((c) => (
                   <button type="button" key={c.hex} aria-label={c.name} aria-pressed={color === c.hex} onClick={() => setColor(c.hex)} className={`w-6 h-6 rounded-full cursor-pointer transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${color === c.hex ? 'scale-125 ring-2 ring-[#8338ec] ring-offset-2' : 'hover:scale-110 opacity-75'}`} style={{ backgroundColor: c.hex }} />
@@ -280,7 +280,7 @@ export const HabitModal: React.FC<HabitModalProps> = ({
           </div>
 
           <div>
-            <p className={`block text-xs font-mono uppercase tracking-wider mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Emoji lain</p>
+            <p className={`block text-xs font-medium mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Mau ganti ikon lain?</p>
             <div className="flex items-center gap-2 flex-wrap">
               {PRESET_EMOJIS.slice(8).map((em) => (
                 <button type="button" key={em} aria-label={`Pilih ${em}`} aria-pressed={emoji === em} onClick={() => setEmoji(em)} className={`w-8 h-8 text-base rounded-lg flex items-center justify-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${emoji === em ? 'bg-[#8338ec]/20 border-2 border-[#8338ec] scale-110' : isDarkMode ? 'bg-[#1a1a24] border border-[#262636] hover:bg-[#252535]' : 'bg-zinc-100 border border-zinc-300 hover:bg-zinc-200'}`}>{em}</button>
@@ -292,23 +292,23 @@ export const HabitModal: React.FC<HabitModalProps> = ({
             <div className="flex items-center justify-between">
               <div className={`flex items-center gap-2 text-xs font-semibold ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
                 <Bell className="w-4 h-4 text-amber-500" aria-hidden />
-                <span>Pengingat harian</span>
+                <span>Ingatkan aku tiap hari</span>
               </div>
               <input type="checkbox" aria-label="Aktifkan pengingat harian" checked={reminderEnabled} onChange={(e) => handleReminderToggle(e.target.checked)} className="w-4 h-4 accent-[#8338ec] cursor-pointer rounded" />
             </div>
             {reminderEnabled && (
               <div className="space-y-2 pt-1">
                 <div className="flex items-center gap-3">
-                  <label htmlFor="habit-reminder-time" className={`text-[11px] font-mono ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Jam:</label>
+                  <label htmlFor="habit-reminder-time" className={`text-[11px] ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Jam berapa enaknya?</label>
                   <input id="habit-reminder-time" type="time" value={reminderTime} onChange={(e) => setReminderTime(e.target.value)} className={`border rounded-lg px-2.5 py-1 text-xs font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0b0b10] border-[#2a2a3c] text-white' : 'bg-white border-zinc-300 text-zinc-900'}`} />
                   <button type="button" onClick={async () => {
                     const { sendHabitNotification, requestNotificationPermission } = await import('../notification');
                     const ok = await requestNotificationPermission();
                     if (!ok) return;
-                    sendHabitNotification(`Test — ${name || 'Habit'}`, 'Ini preview pengingat.', emoji || '🔔');
-                  }} className={`ml-auto px-2.5 py-1 rounded-lg text-[11px] font-semibold border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#1a1a28] border-[#2e2e40] text-zinc-300 hover:text-white' : 'bg-white border-zinc-300 text-zinc-700'}`}>Uji kirim</button>
+                    sendHabitNotification(`Test — ${name || 'Habit'}`, 'Hai, ini pengingat manis darimu sendiri 🤗', emoji || '🔔');
+                  }} className={`ml-auto px-2.5 py-1 rounded-lg text-[11px] font-semibold border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#1a1a28] border-[#2e2e40] text-zinc-300 hover:text-white' : 'bg-white border-zinc-300 text-zinc-700'}`}>Coba dulu</button>
                 </div>
-                <p className={`text-[11px] leading-snug ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>Quiet hours diatur di Manage. Snooze 10 menit otomatis.</p>
+                <p className={`text-[11px] leading-snug ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>Tenang, kamu bisa atur jam sunyi di halaman Kelola. Kalau kelewat, nanti ada snooze 10 menit kok.</p>
               </div>
             )}
           </div>
@@ -317,7 +317,7 @@ export const HabitModal: React.FC<HabitModalProps> = ({
             <div className={`p-3 rounded-xl border flex items-center justify-between ${isDarkMode ? 'bg-[#111119] border-[#202030]' : 'bg-zinc-50 border-zinc-200'}`}>
               <label htmlFor="habit-archived" className={`flex items-center gap-2 text-xs cursor-pointer ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>
                 <Archive className="w-4 h-4 text-zinc-400" aria-hidden />
-                <span>Arsipkan (sembunyikan dari beranda)</span>
+                <span>Istirahat dulu dari beranda?</span>
               </label>
               <input id="habit-archived" type="checkbox" checked={isArchived} onChange={(e) => setIsArchived(e.target.checked)} className="w-4 h-4 accent-[#8338ec] cursor-pointer rounded" />
             </div>
@@ -327,8 +327,8 @@ export const HabitModal: React.FC<HabitModalProps> = ({
           )}
 
           <div className={`flex items-center justify-end gap-3 pt-3 border-t ${isDarkMode ? 'border-[#222230]' : 'border-zinc-200'}`}>
-            <button type="button" onClick={onClose} className={`px-4 py-2 text-xs font-medium rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#20202c]' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'}`}>Batal</button>
-            <button type="submit" className="px-5 py-2 text-xs font-semibold text-white bg-[#8338ec] hover:bg-[#722ed1] active:scale-95 rounded-xl transition-all shadow-lg shadow-[#8338ec]/30 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] focus-visible:ring-offset-2">{initialHabit ? 'Simpan perubahan' : 'Buat kebiasaan'}</button>
+            <button type="button" onClick={onClose} className={`px-4 py-2 text-xs font-medium rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#20202c]' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'}`}>Nanti aja</button>
+            <button type="submit" className="px-5 py-2 text-xs font-semibold text-white bg-[#8338ec] hover:bg-[#722ed1] active:scale-95 rounded-xl transition-all shadow-lg shadow-[#8338ec]/30 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] focus-visible:ring-offset-2">{initialHabit ? 'Simpan ya' : 'Siap, buat sekarang!'}</button>
           </div>
         </form>
       </div>

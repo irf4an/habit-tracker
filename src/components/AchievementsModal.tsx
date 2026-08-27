@@ -34,15 +34,18 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
     return true;
   });
 
-  const nextLevelXp = level === 1 ? 200 : level === 2 ? 500 : level === 3 ? 1000 : 2000;
-  const levelProgress = Math.min(100, Math.round((totalXp / nextLevelXp) * 100));
+  const LEVELS_XP = [0, 150, 400, 750, 1200, 1800, 2500, 3500, 5000, 7500, Infinity];
+  const nextLevelXp = LEVELS_XP[level] ?? LEVELS_XP[LEVELS_XP.length - 1];
+  const curLevelXp = LEVELS_XP[level - 1] ?? 0;
+  const span = Math.max(1, nextLevelXp - curLevelXp);
+  const levelProgress = Math.min(100, Math.round(((totalXp - curLevelXp) / span) * 100));
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in" role="dialog" aria-modal="true" aria-label="Pencapaian dan lencana" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md modal-overlay" role="dialog" aria-modal="true" aria-label="Pencapaian dan lencana" onClick={onClose}>
       <div
         role="document"
         onClick={(e) => e.stopPropagation()}
-        className={`border rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl relative max-h-[90vh] overflow-y-auto ${isDarkMode ? 'bg-[#12121a] border-[#8338ec]/35 text-white' : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'}`}
+        className={`border rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl modal-card relative max-h-[90vh] overflow-y-auto ${isDarkMode ? 'bg-[#12121a] border-[#8338ec]/35 text-white' : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'}`}
         style={{
           boxShadow: isDarkMode ? `0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(131,56,236,0.18)` : `0 20px 50px rgba(0,0,0,0.15)`,
         }}
@@ -55,10 +58,10 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
             </div>
             <div>
               <h2 className={`text-xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
-                Achievements & Badges
+                Koleksi Lencana Kamu ✨
               </h2>
-              <p className={`text-xs font-mono ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                Unlock milestone badges as you build your consistency.
+              <p className={`text-xs leading-relaxed ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                Tiap centang kecil adalah kemenangan. Yuk lihat udah sejauh apa kamu! 🎉
               </p>
             </div>
           </div>
@@ -79,7 +82,7 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
               </div>
               <div>
                 <div className="text-xs font-mono text-[#8338ec] font-semibold tracking-wide">
-                  CURRENT RANK
+                  KAMU SEKARANG
                 </div>
                 <h3 className={`text-base font-bold ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{levelTitle}</h3>
               </div>
@@ -106,14 +109,14 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
         <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
           <div className="flex items-center gap-1.5">
             {[
-              { id: 'all', label: `All (${badges.length})` },
-              { id: 'unlocked', label: `Unlocked (${unlockedCount})` },
-              { id: 'locked', label: `Locked (${totalCount - unlockedCount})` },
+              { id: 'all', label: `Semua (${badges.length})` },
+              { id: 'unlocked', label: `Kebuka 🎉 (${unlockedCount})` },
+              { id: 'locked', label: `Dikunci 🔒 (${totalCount - unlockedCount})` },
             ].map((f) => (
               <button
                 key={f.id}
                 onClick={() => setActiveFilter(f.id as any)}
-                className={`px-3 py-1 rounded-xl text-xs font-mono transition-all cursor-pointer border ${
+                className={`px-3 py-1 rounded-xl text-xs transition-all cursor-pointer border ${
                   activeFilter === f.id
                     ? 'bg-[#8338ec] text-white border-[#8338ec] font-semibold shadow-md shadow-[#8338ec]/25'
                     : isDarkMode

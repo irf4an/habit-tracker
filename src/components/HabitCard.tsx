@@ -324,12 +324,12 @@ export const HabitCard: React.FC<HabitCardProps> = ({
               setNoteText(habit.notes?.[todayStr] || '');
               setCellVal(habit.history[todayStr] || 0);
             }}
-            className={`ml-1 p-1 rounded-md border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${habit.notes?.[todayStr] ? 'bg-amber-500/15 border-amber-500/30 text-amber-600' : isDarkMode ? 'border-transparent text-zinc-500 hover:text-zinc-200 hover:bg-white/5' : 'border-zinc-200 bg-zinc-50 text-zinc-500 hover:text-zinc-700'}`}
-            title={habit.notes?.[todayStr] ? `Catatan hari ini: "${habit.notes?.[todayStr]?.slice(0, 40)}" — klik edit` : 'Tulis catatan hari ini'}
+            className={`ml-1 p-1 rounded-md border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isTodayCompleted || habit.notes?.[todayStr] ? 'bg-amber-500/15 border-amber-500/30 text-amber-600' : isDarkMode ? 'border-transparent text-zinc-500 hover:text-zinc-200 hover:bg-white/5' : 'border-zinc-200 bg-zinc-50 text-zinc-500 hover:text-zinc-700'}`}
+            title={habit.notes?.[todayStr] ? `Catatan hari ini: "${habit.notes?.[todayStr]?.slice(0, 40)}" — klik edit` : isTodayCompleted ? 'Sudah selesai hari ini — tulis catatan' : 'Tulis catatan hari ini'}
           >
             <Pencil className="w-3 h-3" aria-hidden />
           </button>
-          {habit.notes?.[todayStr] && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" aria-hidden />}
+          {(isTodayCompleted || habit.notes?.[todayStr]) && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" aria-hidden />}
         </div>
       </div>
 
@@ -424,7 +424,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
       {/* Popover Modal for Single Day Log */}
       {selectedDate && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm modal-overlay duration-150"
           role="dialog"
           aria-modal="true"
           aria-label={`Detail hari ${selectedDate} — ${habit.name}`}
@@ -434,7 +434,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
           <div
             role="document"
             onClick={(e) => e.stopPropagation()}
-            className={`border rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-4 ${isDarkMode ? 'bg-[#15151d] border-[#8338ec]/40' : 'bg-white border-zinc-300 shadow-xl'}`}
+            className={`border rounded-2xl p-5 max-w-sm w-full shadow-2xl modal-card space-y-4 ${isDarkMode ? 'bg-[#15151d] border-[#8338ec]/40' : 'bg-white border-zinc-300 shadow-xl'}`}
             style={{ boxShadow: isDarkMode ? `0 20px 50px rgba(0,0,0,0.8), 0 0 25px rgba(131,56,236,0.2)` : `0 16px 40px rgba(0,0,0,0.12)` }}
           >
             <div className={`flex items-center justify-between border-b pb-2.5 ${isDarkMode ? 'border-[#242434]' : 'border-zinc-200'}`}>

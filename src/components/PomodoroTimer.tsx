@@ -136,11 +136,11 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
 
   // FULL FOCUS MODAL
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in" role="dialog" aria-modal="true" aria-label={`Timer fokus untuk ${session.habit.name}`} onClick={() => onUpdateSession(null)}>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md modal-overlay" role="dialog" aria-modal="true" aria-label={`Timer fokus untuk ${session.habit.name}`} onClick={() => onUpdateSession(null)}>
       <div
         role="document"
         onClick={(e) => e.stopPropagation()}
-        className={`border rounded-3xl max-w-md w-full p-7 shadow-2xl relative overflow-hidden text-center ${isDarkMode ? 'bg-[#12121a] border-[#8338ec]/35 text-white' : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'}`}
+        className={`border rounded-3xl max-w-md w-full p-7 shadow-2xl modal-card relative overflow-hidden text-center ${isDarkMode ? 'bg-[#12121a] border-[#8338ec]/35 text-white' : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'}`}
         style={{
           boxShadow: isDarkMode
             ? `0 20px 60px rgba(0,0,0,0.8), 0 0 50px ${session.habit.color}20`

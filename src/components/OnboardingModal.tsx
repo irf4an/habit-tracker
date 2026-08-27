@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Calendar, Keyboard, ArrowRight, Check, X, Timer, Snowflake } from 'lucide-react';
+import { ArrowRight, Check, X, Timer, Snowflake } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { playCheckSound, playUncheckSound, playCelebrationSound } from '../sound';
 
@@ -59,8 +59,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[85] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in" role="dialog" aria-modal="true" aria-label="Panduan awal habit tracker" onClick={onClose}>
-      <div role="document" onClick={(e) => e.stopPropagation()} className={`border rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative overflow-hidden ${isDarkMode ? 'bg-[#12121a] border-[#8338ec]/35 text-white' : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'}`} style={{ boxShadow: isDarkMode ? `0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(131,56,236,0.18)` : `0 20px 50px rgba(0,0,0,0.15)` }}>
+    <div className="fixed inset-0 z-[85] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md modal-overlay" role="dialog" aria-modal="true" aria-label="Panduan awal habit tracker" onClick={onClose}>
+      <div role="document" onClick={(e) => e.stopPropagation()} className={`border rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl modal-card relative overflow-hidden ${isDarkMode ? 'bg-[#12121a] border-[#8338ec]/35 text-white' : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'}`} style={{ boxShadow: isDarkMode ? `0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(131,56,236,0.18)` : `0 20px 50px rgba(0,0,0,0.15)` }}>
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-1.5" aria-label={`Langkah ${step} dari 4`}>
             {[1, 2, 3, 4].map((i) => (
@@ -74,7 +74,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
         {step === 1 && (
           <div className="space-y-4 animate-in fade-in">
-            <div className="w-12 h-12 rounded-2xl bg-[#8338ec]/15 border border-[#8338ec]/30 flex items-center justify-center text-[#8338ec]"><Calendar className="w-6 h-6" /></div>
             <div>
               <h3 className={`text-lg sm:text-xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Cara kerjanya</h3>
               <p className={`text-sm leading-relaxed mt-2 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Setiap kebiasaan punya kalender kotak kecil. Selesai hari ini → kotaknya menyala. Kosong? Kotak tetap abu-abu. Lama-lama polanya kelihatan.</p>
@@ -90,7 +89,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
         {step === 2 && (
           <div className="space-y-4 animate-in fade-in">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500"><Keyboard className="w-6 h-6" /></div>
             <div>
               <h3 className={`text-lg sm:text-xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Coba langsung — tekan 1</h3>
               <p className={`text-sm leading-relaxed mt-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Di HP, cukup ketuk kotaknya. Di laptop, pakai keyboard lebih cepat. Coba sekarang:</p>
@@ -116,7 +114,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
         {step === 3 && (
           <div className="space-y-4 animate-in fade-in">
-            <div className="w-12 h-12 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-500"><Sparkles className="w-6 h-6" /></div>
             <div>
               <h3 className={`text-lg sm:text-xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Jaga ritme, bukan sempurna</h3>
               <p className={`text-sm leading-relaxed mt-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Dua alat bantu biar nggak gampang bolong:</p>
@@ -136,7 +133,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
         {step === 4 && (
           <div className="space-y-4 animate-in fade-in text-center py-1">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-3xl mx-auto">✓</div>
             <div>
               <h3 className={`text-xl font-extrabold tracking-tight ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Mulai dari satu kebiasaan kecil</h3>
               <p className={`text-sm leading-relaxed mt-2 max-w-sm mx-auto ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Data tersimpan di perangkatmu. Kalau login, otomatis sinkron ke HP/laptop lain.</p>
@@ -146,7 +142,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         )}
 
         <div className={`flex items-center justify-between pt-4 border-t mt-5 ${isDarkMode ? 'border-[#202030]' : 'border-zinc-200'}`}>
-          <button type="button" onClick={onClose} className={`text-sm cursor-pointer ${isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-500 hover:text-zinc-700'}`}>Lewati</button>
+          {step > 1 ? (
+            <button type="button" onClick={() => setStep((s) => s - 1)} className={`text-sm cursor-pointer flex items-center gap-1 ${isDarkMode ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-500 hover:text-zinc-700'}`}>← Back</button>
+          ) : (
+            <button type="button" onClick={onClose} className={`text-sm cursor-pointer ${isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-500 hover:text-zinc-700'}`}>Lewati</button>
+          )}
           <button type="button" onClick={handleNext} className="flex items-center gap-1.5 px-5 py-2.5 bg-[#8338ec] hover:bg-[#722ed1] text-white rounded-xl text-sm font-bold transition-all active:scale-95 cursor-pointer shadow-lg shadow-[#8338ec]/25">
             {step === 4 ? <><Check className="w-4 h-4" /> Buat kebiasaan pertama</> : <>Lanjut <ArrowRight className="w-4 h-4" /></>}
           </button>

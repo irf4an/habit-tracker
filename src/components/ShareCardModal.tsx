@@ -106,8 +106,8 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ habit, onClose, 
     return () => window.removeEventListener('keydown', onEsc);
   }, [onClose]);
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in" role="dialog" aria-modal="true" aria-label={`Bagikan streak ${habit.name}`} onClick={onClose}>
-      <div className="max-w-md w-full space-y-4" role="document" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md modal-overlay" role="dialog" aria-modal="true" aria-label={`Bagikan streak ${habit.name}`} onClick={onClose}>
+      <div className="max-w-md w-full space-y-4" modal-card role="document" onClick={(e) => e.stopPropagation()}>
         {/* THE SHAREABLE CARD */}
         <div
           ref={cardRef}

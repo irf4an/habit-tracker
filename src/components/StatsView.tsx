@@ -57,7 +57,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ habits, isDarkMode = true 
 
   const { weeks, monthLabels } = useMemo(() => {
     const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 640;
-    return getYearDays(isDesktop ? 30 : 18);
+    return getYearDays(isDesktop ? 52 : 18);
   }, []);
   const dayLabels = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
@@ -152,13 +152,13 @@ export const StatsView: React.FC<StatsViewProps> = ({ habits, isDarkMode = true 
           <h3 className={`text-sm sm:text-base font-bold flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
             <Layers className="w-4 h-4 text-indigo-500" /> Aktivitas Harian
           </h3>
-          <span className={`text-[10.5px] font-light tracking-wide font-mono ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>30 Minggu Terakhir</span>
+          <span className={`text-[10.5px] font-light tracking-wide font-mono ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>12 Bulan Terakhir</span>
         </div>
         <div className="overflow-x-auto pb-1 no-scrollbar touch-pan-x flex justify-start sm:justify-center">
           <div className="min-w-fit flex flex-col gap-1 select-none">
             <div className={`flex text-[9.5px] font-mono pl-6 mb-1 relative h-4 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>
               {monthLabels.map((m, idx) => (
-                <div key={idx} className="absolute transform" style={{ left: `calc(1.5rem + ${m.colIndex * 16}px)` }}>
+                <div key={idx} className="absolute transform" style={{ left: `calc(1.5rem + ${m.colIndex * 14.5}px)` }}>
                   {m.name}
                 </div>
               ))}
@@ -176,29 +176,43 @@ export const StatsView: React.FC<StatsViewProps> = ({ habits, isDarkMode = true 
                   <div key={wIdx} className="flex flex-col gap-[2.5px]">
                     {week.map((day) => {
                       let doneCount = 0;
+                      let partialCount = 0;
                       habits.forEach((h) => {
+                        const isFrozen = (h.frozenDates || []).includes(day.dateStr);
+                        if (isFrozen) { doneCount++; return; }
                         const v = h.history[day.dateStr] || 0;
-                        const target = h.targetValue || 1;
-                        if (h.type === 'numeric' ? v >= target : v === 1) doneCount++;
+                        if (h.type === 'numeric') {
+                          const target = h.targetValue ?? 1;
+                          if (v >= target) doneCount++;
+                          else if (v > 0) partialCount++;
+                        } else if (v === 1) doneCount++;
                       });
+                      const totalProgress = doneCount + partialCount * 0.45;
                       const intensity = habits.length > 0 ? doneCount / habits.length : 0;
+                      const hasPartial = partialCount > 0 && doneCount === 0;
+                      const bgPartial = isDarkMode ? 'rgba(163,130,255,0.55)' : '#c4b5fd';
                       return (
                         <div
                           key={day.dateStr}
-                          title={`${day.dateStr}: ${doneCount} dari ${habits.length} kebiasaan selesai`}
+                          title={
+                            hasPartial
+                              ? `${day.dateStr}: progres sebagian ${partialCount} kebiasaan (belum capai target)`
+                              : `${day.dateStr}: ${doneCount} dari ${habits.length} kebiasaan selesai`
+                          }
                           className={`w-3 h-3 rounded-[2px] ${day.isFuture ? 'opacity-15 bg-[#14141c]' : 'cursor-pointer'}`}
                           style={{
-                            backgroundColor:
-                              doneCount === 0
-                                ? (isDarkMode ? '#181824' : '#e4e4e7')
-                                : intensity === 1
-                                ? '#8338ec'
-                                : intensity >= 0.66
-                                ? '#9b5de5'
-                                : intensity >= 0.33
-                                ? '#b5838d'
-                                : (isDarkMode ? '#24143a' : '#ddd6fe'),
-                            boxShadow: intensity === 1 ? '0 0 6px rgba(131,56,236,0.6)' : undefined,
+                            backgroundColor: hasPartial
+                              ? bgPartial
+                              : doneCount === 0
+                              ? (isDarkMode ? '#181824' : '#e4e4e7')
+                              : intensity === 1
+                              ? '#8338ec'
+                              : intensity >= 0.66
+                              ? '#9b5de5'
+                              : intensity >= 0.33
+                              ? '#b5838d'
+                              : (isDarkMode ? '#24143a' : '#ddd6fe'),
+                            boxShadow: intensity === 1 ? '0 0 6px rgba(131,56,236,0.6)' : hasPartial ? '0 0 4px rgba(163,130,255,0.5)' : undefined,
                           }}
                         />
                       );
