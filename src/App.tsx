@@ -33,79 +33,9 @@ import confetti from 'canvas-confetti';
 
 const STORAGE_KEY = 'minimal_habit_tracker_data_v2';
 
-// Initial realistic demo habits resembling the screenshot + advanced fields
+// Clean initial state for new public users: start fresh (empty)
 const generateDemoHabits = (): Habit[] => {
-  const today = new Date();
-  const gymHistory: Record<string, number> = {};
-  const readingHistory: Record<string, number> = {};
-  const videoHistory: Record<string, number> = {};
-
-  // Fill sample patterns over the last 150 days
-  for (let i = 0; i < 150; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    const dateStr = formatDate(d);
-
-    // Gym pattern: recent 3 days checked, occasional gaps
-    if (i < 3) {
-      gymHistory[dateStr] = 1;
-    } else if (i % 7 === 1 || i % 7 === 2 || i % 7 === 4 || i % 5 === 0) {
-      gymHistory[dateStr] = 1;
-    }
-
-    // Reading pattern: numeric pages (e.g. 20 pages)
-    if (i >= 2 && i < 15) {
-      readingHistory[dateStr] = 20;
-    } else if (i >= 20 && i < 35 && i % 2 === 0) {
-      readingHistory[dateStr] = 15;
-    }
-
-    // Video pattern: newly started
-    if (i === 1 || i === 4) {
-      videoHistory[dateStr] = 1;
-    }
-  }
-
-  return [
-    {
-      id: 'habit-1',
-      name: 'gym',
-      emoji: '💪',
-      color: '#3b82f6', // sky blue
-      category: 'Fitness',
-      type: 'boolean',
-      frequency: 'everyday',
-      createdAt: '2026-05-10',
-      history: gymHistory,
-      notes: {},
-    },
-    {
-      id: 'habit-2',
-      name: 'reading',
-      emoji: '📚',
-      color: '#eab308', // amber yellow
-      category: 'Learning',
-      type: 'numeric',
-      targetValue: 20,
-      unit: 'pages',
-      frequency: 'everyday',
-      createdAt: '2026-06-01',
-      history: readingHistory,
-      notes: {},
-    },
-    {
-      id: 'habit-3',
-      name: '1 manware video',
-      emoji: '🔥',
-      color: '#f97316', // bright orange
-      category: 'Productivity',
-      type: 'boolean',
-      frequency: 'everyday',
-      createdAt: '2026-08-15',
-      history: videoHistory,
-      notes: {},
-    },
-  ];
+  return [];
 };
 
 export function App() {
@@ -174,11 +104,13 @@ export function App() {
     } catch {
       // default
     }
+    const today = new Date();
+    const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     return {
-      name: 'Irfan',
-      bio: 'Konsisten setiap hari 🚀',
+      name: 'Pengguna',
+      bio: '1% lebih baik setiap hari 🚀',
       avatarEmoji: '⚡',
-      joinedDate: 'Mei 2026',
+      joinedDate: `${monthNames[today.getMonth()]} ${today.getFullYear()}`,
     };
   });
 
@@ -601,8 +533,45 @@ export function App() {
   };
 
   const handleResetSample = () => {
-    if (window.confirm('Reset all current habits to demo data?')) {
-      setHabits(generateDemoHabits());
+    if (window.confirm('Muat contoh kebiasaan demo?')) {
+      const today = new Date();
+      const gymHistory: Record<string, number> = {};
+      const readingHistory: Record<string, number> = {};
+      for (let i = 0; i < 60; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const dateStr = formatDate(d);
+        if (i < 3 || i % 2 === 0) gymHistory[dateStr] = 1;
+        if (i % 3 === 0) readingHistory[dateStr] = 20;
+      }
+      setHabits([
+        {
+          id: 'demo-1',
+          name: 'Olahraga Pagi',
+          emoji: '💪',
+          color: '#3b82f6',
+          category: 'Fitness',
+          type: 'boolean',
+          frequency: 'everyday',
+          createdAt: formatDate(today),
+          history: gymHistory,
+          notes: {},
+        },
+        {
+          id: 'demo-2',
+          name: 'Baca Buku',
+          emoji: '📚',
+          color: '#eab308',
+          category: 'Learning',
+          type: 'numeric',
+          targetValue: 20,
+          unit: 'halaman',
+          frequency: 'everyday',
+          createdAt: formatDate(today),
+          history: readingHistory,
+          notes: {},
+        },
+      ]);
     }
   };
 
