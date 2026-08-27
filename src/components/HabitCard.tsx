@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Habit } from '../types';
 import { getTodayString, getYearDays, calculateStreak, canFreezeOnDate, freezeRemaining, FREEZE_WEEKLY_LIMIT } from '../utils';
 import { MaterialIcon } from './MaterialIcon';
@@ -49,8 +49,16 @@ export const HabitCard: React.FC<HabitCardProps> = ({
   const [noteText, setNoteText] = useState<string>('');
   const [cellVal, setCellVal] = useState<number>(0);
 
-  // Exact 310-320px width on mobile (19 weeks)
-  const numWeeks = isFullView ? 52 : 19;
+  // Adaptive weeks based on screen width: 18 weeks on small mobile (fits 320-375px), 26 on tablet, 52 on full view
+  const [windowWidth, setWindowWidth] = useState<number>(() => (typeof window !== 'undefined' ? window.innerWidth : 380));
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const numWeeks = isFullView ? 52 : windowWidth < 380 ? 17 : windowWidth < 640 ? 19 : 28;
   const { weeks, monthLabels } = useMemo(() => getYearDays(numWeeks), [numWeeks]);
 
   const handleCheckToday = (e: React.MouseEvent) => {
@@ -131,10 +139,10 @@ export const HabitCard: React.FC<HabitCardProps> = ({
 
   return (
     <div
-      className={`transition-all rounded-2xl p-4 sm:p-5 mb-4 relative overflow-hidden group border ${
+      className={`transition-all rounded-3xl p-4 sm:p-5 mb-4 relative overflow-hidden group border ${
         isDarkMode
           ? 'bg-[#111116] border-[#8338ec]/35 hover:border-[#8338ec]/60'
-          : 'bg-white border-[#8338ec]/25 hover:border-[#8338ec]/50'
+          : 'bg-white border-[#8338ec]/25 hover:border-[#8338ec]/50 shadow-sm'
       }`}
       style={{
         boxShadow: isDarkMode
@@ -143,10 +151,10 @@ export const HabitCard: React.FC<HabitCardProps> = ({
       }}
     >
       {/* Top Header: 3-tier */}
-      <div className="flex flex-col gap-2 mb-3">
-        {/* Tier 1: check + title on left, toolbar on right — prevent toolbar wrapping */}
+      <div className="flex flex-col gap-2.5 mb-3.5">
+        {/* Tier 1: Check In + Title on Left, Action Toolbar on Right */}
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <button
               type="button"
               onClick={handleCheckToday}
@@ -185,7 +193,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
             </button>
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-2xl select-none shrink-0 leading-none">{habit.emoji || '🎯'}</span>
-              <h3 className={`font-extrabold text-[15px] sm:text-base tracking-tight truncate leading-tight ${isDarkMode ? 'text-white' : 'text-zinc-950'}`}>
+              <h3 className={`font-extrabold text-base sm:text-lg tracking-tight truncate leading-tight ${isDarkMode ? 'text-white' : 'text-zinc-950'}`}>
                 {habit.name}
               </h3>
             </div>
@@ -283,7 +291,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
         <div className="flex items-center gap-1.5 flex-wrap">
           {/* Category */}
           {habit.category && (
-            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border shrink-0 inline-flex items-center gap-1 leading-none ${
+            <span className={`text-[10px] font-medium px-2.5 py-0.5 rounded-full border shrink-0 inline-flex items-center gap-1 leading-none ${
               isDarkMode ? 'text-zinc-300 bg-[#171724] border-[#29293e]' : 'text-zinc-600 bg-zinc-100 border-zinc-200'
             }`}>
               <MaterialIcon name="label" size={12} />
@@ -293,7 +301,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
 
           {/* Frequency */}
           {freqLabel && (
-            <span className="text-[10px] font-medium text-indigo-500 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-full shrink-0 inline-flex items-center gap-1 leading-none">
+            <span className="text-[10px] font-medium text-indigo-500 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded-full shrink-0 inline-flex items-center gap-1 leading-none">
               <MaterialIcon name="repeat" size={12} color="#6366f1" />
               {freqLabel}
             </span>
@@ -301,7 +309,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
 
           {/* Streak Badge */}
           <span
-            className="font-bold px-2 py-0.5 rounded-full text-[10px] font-mono flex items-center gap-1 shrink-0 border leading-none"
+            className="font-bold px-2.5 py-0.5 rounded-full text-[10px] font-mono flex items-center gap-1 shrink-0 border leading-none"
             style={{
               backgroundColor: `${habit.color}18`,
               color: habit.color,
@@ -314,7 +322,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
 
           {/* Target */}
           {isNumeric && (
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-medium border shrink-0 inline-flex items-center gap-1 leading-none ${
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium border shrink-0 inline-flex items-center gap-1 leading-none ${
               isDarkMode ? 'text-zinc-300 bg-[#161622] border-[#242434]' : 'text-zinc-700 bg-zinc-100 border-zinc-200'
             }`}>
               <MaterialIcon name="flag" size={12} color="#8338ec" />
@@ -326,7 +334,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
           {habit.reminderEnabled && (
             <span
               title={`Pengingat aktif setiap jam ${habit.reminderTime || '20:00'}`}
-              className={`px-2 py-0.5 rounded-full border flex items-center gap-1 shrink-0 text-[10px] font-medium leading-none ${
+              className={`px-2.5 py-0.5 rounded-full border flex items-center gap-1 shrink-0 text-[10px] font-medium leading-none ${
                 isDarkMode
                   ? 'text-amber-400 bg-amber-500/10 border-amber-500/25'
                   : 'text-amber-600 bg-amber-50 border-amber-200'
@@ -363,34 +371,59 @@ export const HabitCard: React.FC<HabitCardProps> = ({
         </div>
       </div>
 
-      {/* Grid Container — accessible grid, keyboard navigable */}
-      <div className="w-full overflow-hidden flex justify-center py-0.5">
-        <div className="w-full overflow-x-auto pb-1 no-scrollbar touch-pan-x flex flex-col items-start sm:items-center" role="region" aria-label={`Kalender ${habit.name} — ${weeks.length} minggu`} tabIndex={0}>
-          <div className="w-fit flex flex-col gap-1 select-none">
-            {/* Months Row — decorative */}
-            <div aria-hidden className={`flex text-[9.5px] font-mono pl-5 mb-1 relative h-4 w-full ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>
+      {/* Grid Container — Full Responsive Width & Aligned Month Header */}
+      <div className="w-full flex flex-col pt-1">
+        <div
+          className="w-full overflow-x-auto pb-1 no-scrollbar touch-pan-x"
+          role="region"
+          aria-label={`Kalender ${habit.name} — ${weeks.length} minggu`}
+          tabIndex={0}
+        >
+          <div className="min-w-fit mx-auto flex flex-col gap-1 select-none">
+            {/* Months Header — ColIndex-based precision alignment */}
+            <div
+              aria-hidden
+              className={`flex text-[9px] sm:text-[10px] font-mono mb-1 relative h-3.5 w-full pl-6 ${
+                isDarkMode ? 'text-zinc-500' : 'text-zinc-400'
+              }`}
+            >
               {monthLabels.map((m: { name: string; colIndex: number }, idx: number) => (
-                <div key={idx} className="absolute transform" style={{ left: `calc(1.35rem + ${m.colIndex * 14}px)` }}>
+                <div
+                  key={idx}
+                  className="absolute"
+                  style={{
+                    left: `calc(1.5rem + ${m.colIndex * 15}px)`,
+                  }}
+                >
                   {m.name}
                 </div>
               ))}
             </div>
 
-            {/* Grid */}
-            <div className="flex gap-1 items-start" role="grid" aria-label={`${habit.name} heatmap — gunakan Tab dan Enter untuk ubah hari`}>
-              {/* Day Labels — decorative */}
-              <div aria-hidden className={`flex flex-col gap-[2px] text-[8px] font-mono pr-1 pt-[1px] ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400 font-medium'}`}>
+            {/* Grid Row */}
+            <div
+              className="flex items-start gap-1.5"
+              role="grid"
+              aria-label={`${habit.name} heatmap — gunakan Tab dan Enter untuk ubah hari`}
+            >
+              {/* Day Labels (Min, Sel, Kam, Sab) */}
+              <div
+                aria-hidden
+                className={`flex flex-col gap-[3px] text-[8px] sm:text-[8.5px] font-mono pr-0.5 pt-[1px] ${
+                  isDarkMode ? 'text-zinc-500' : 'text-zinc-400'
+                }`}
+              >
                 {dayLabels.map((lbl: string, dIdx: number) => (
-                  <div key={dIdx} className="h-3 leading-3 w-3.5 text-right">
+                  <div key={dIdx} className="h-3 leading-3 w-4 text-right">
                     {dIdx % 2 === 0 ? lbl : ''}
                   </div>
                 ))}
               </div>
 
-              {/* Matrix */}
-              <div className="flex gap-[2px]" role="rowgroup">
+              {/* Matrix Columns */}
+              <div className="flex gap-[3px]" role="rowgroup">
                 {weeks.map((week: Array<{ date: Date; dateStr: string; dayOfWeek: number; isFuture: boolean }>, wIdx: number) => (
-                  <div key={wIdx} className="flex flex-col gap-[2px]" role="row">
+                  <div key={wIdx} className="flex flex-col gap-[3px]" role="row">
                     {week.map((day: { date: Date; dateStr: string; dayOfWeek: number; isFuture: boolean }) => {
                       const rawVal = habit.history[day.dateStr] || 0;
                       const isDone = isNumeric ? rawVal >= targetVal : rawVal === 1;
@@ -413,9 +446,9 @@ export const HabitCard: React.FC<HabitCardProps> = ({
                             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCellClick(day.dateStr, e as unknown as React.MouseEvent); }
                           }}
                           title={`${day.dateStr}${isFrozen ? ' [❄️ Streak Freeze]' : ''}${rawVal > 0 ? ` (${rawVal}${habit.unit ? ' ' + habit.unit : ''})` : ''}${hasNote ? ' [Note attached]' : ''}${isToday ? ' - Today' : ''}`}
-                          className={`w-3 h-3 rounded-[2px] relative touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] focus-visible:ring-offset-1 focus-visible:ring-offset-transparent ${
-                            day.isFuture ? 'bg-[#15151e] opacity-20 cursor-not-allowed' : 'cursor-pointer hover:scale-110 active:scale-95'
-                          } ${isToday && !isDone && !isFrozen ? 'ring-1 ring-zinc-400' : ''}`}
+                          className={`w-3 h-3 rounded-[2.5px] relative touch-manipulation transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] focus-visible:ring-offset-1 focus-visible:ring-offset-transparent ${
+                            day.isFuture ? 'bg-[#15151e] opacity-20 cursor-not-allowed' : 'cursor-pointer hover:scale-125 active:scale-95'
+                          } ${isToday && !isDone && !isFrozen ? 'ring-1.5 ring-[#8338ec]' : ''}`}
                           style={{
                             backgroundColor: isDone ? habit.color : isFrozen ? '#0284c7' : isPartial ? `${habit.color}88` : day.isFuture ? (isDarkMode ? '#14141c' : '#f4f4f5') : (isDarkMode ? '#1e1e28' : '#e4e4e7'),
                             boxShadow: isDone ? `0 0 6px ${habit.color}88` : isFrozen ? '0 0 8px rgba(2,132,199,0.7)' : undefined,
@@ -431,10 +464,12 @@ export const HabitCard: React.FC<HabitCardProps> = ({
               </div>
             </div>
 
-            {/* Minimalist Mobile Footer Legend */}
-            <div className={`flex items-center justify-end gap-1.5 text-[10px] font-mono mt-2 pr-1 w-full ${
-              isDarkMode ? 'text-zinc-500' : 'text-zinc-400'
-            }`}>
+            {/* Heatmap Footer Legend */}
+            <div
+              className={`flex items-center justify-end gap-1.5 text-[10px] font-mono mt-2 pr-1 w-full ${
+                isDarkMode ? 'text-zinc-500' : 'text-zinc-400'
+              }`}
+            >
               <span>Kurang</span>
               <div className={`w-2.5 h-2.5 rounded-[2px] ${isDarkMode ? 'bg-[#1e1e28]' : 'bg-[#e4e4e7]'}`} />
               <div
