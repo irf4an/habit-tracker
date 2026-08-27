@@ -68,13 +68,17 @@
   box-shadow: 0 8px 30px rgba(131, 56, 236, 0.08), 0 0 1px rgba(131, 56, 236, 0.3) !important;
 }
 
-/* Hide scrollbars cleanly for mobile heatmap touch scrolling */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+/* Hide scrollbars cleanly for mobile heatmap touch scrolling & modals */
+.no-scrollbar::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+.no-scrollbar,
+* {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 ::view-transition-old(root),

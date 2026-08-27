@@ -45,7 +45,7 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
       <div
         role="document"
         onClick={(e) => e.stopPropagation()}
-        className={`border rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl modal-card relative max-h-[90vh] overflow-y-auto ${isDarkMode ? 'bg-[#12121a] border-[#8338ec]/35 text-white' : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'}`}
+        className={`border rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl modal-card relative max-h-[90vh] overflow-y-auto no-scrollbar ${isDarkMode ? 'bg-[#12121a] border-[#8338ec]/35 text-white' : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'}`}
         style={{
           boxShadow: isDarkMode ? `0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(131,56,236,0.18)` : `0 20px 50px rgba(0,0,0,0.15)`,
         }}

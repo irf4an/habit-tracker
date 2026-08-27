@@ -130,7 +130,7 @@ export const HabitModal: React.FC<HabitModalProps> = ({
       <div
         role="document"
         onClick={(e) => e.stopPropagation()}
-        className={`border rounded-2xl w-full modal-card max-w-lg p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto ${
+        className={`border rounded-2xl w-full modal-card max-w-lg p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto no-scrollbar ${
           isDarkMode ? 'bg-[#14141c] border-[#8338ec]/35 text-white' : 'bg-white border-zinc-200 text-zinc-900 shadow-2xl'
         }`}
         style={{
