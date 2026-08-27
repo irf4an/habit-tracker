@@ -48,34 +48,24 @@ export function getYearDays(numWeeks: number = 52): {
 
   for (let w = 0; w < numWeeks; w++) {
     const weekDays: Array<{ date: Date; dateStr: string; dayOfWeek: number; isFuture: boolean }> = [];
-    let firstDayInWeekMonth = -1;
-
+    // Count days per month in this week to find the dominant month
+    const monthCounts = new Map<number, number>();
     for (let d = 0; d < 7; d++) {
       const curDate = new Date(startDate);
       curDate.setDate(startDate.getDate() + (w * 7 + d));
       const dateStr = formatDate(curDate);
       const isFuture = curDate.getTime() > today.getTime();
-
-      weekDays.push({
-        date: curDate,
-        dateStr,
-        dayOfWeek: d,
-        isFuture,
-      });
-
-      if (curDate.getDate() <= 7 && firstDayInWeekMonth === -1) {
-        firstDayInWeekMonth = curDate.getMonth();
-      }
+      weekDays.push({ date: curDate, dateStr, dayOfWeek: d, isFuture });
+      const m = curDate.getMonth();
+      monthCounts.set(m, (monthCounts.get(m) || 0) + 1);
     }
-
-    if (firstDayInWeekMonth !== -1 && firstDayInWeekMonth !== lastLabeledMonth) {
-      monthLabels.push({
-        name: shortMonths[firstDayInWeekMonth],
-        colIndex: w,
-      });
-      lastLabeledMonth = firstDayInWeekMonth;
+    // Pick dominant month (most days in the week) for label — fixes "Agu" in late-August
+    let candidate = -1; let best = -1;
+    for (const [m, c] of monthCounts.entries()) { if (c > best) { best = c; candidate = m; } }
+    if (candidate !== -1 && candidate !== lastLabeledMonth) {
+      monthLabels.push({ name: shortMonths[candidate], colIndex: w });
+      lastLabeledMonth = candidate;
     }
-
     weeks.push(weekDays);
   }
 
@@ -136,11 +126,11 @@ function isWeeklyTargetMetForWeek(history: Record<string, number>, frozenDates: 
   return done >= target;
 }
 
-// Calculate streaks and percentages — aware of frequency
+// Calculate streaks and percentages — aware of frequency + numeric target
 export function calculateStreak(
   history: Record<string, number>,
   frozenDates: string[] = [],
-  habit?: Pick<Habit, 'frequency' | 'weeklyTargetDays'>
+  habit?: Pick<Habit, 'frequency' | 'weeklyTargetDays' | 'type' | 'targetValue'>
 ): {
   currentStreak: number;
   bestStreak: number;
@@ -148,12 +138,20 @@ export function calculateStreak(
   totalCompleted: number;
   frozenCount: number;
 } {
+  const targetForHabit = habit?.targetValue ?? 1;
+  const isNumericHabit = habit?.type === 'numeric';
+  const isDayCompleted = (dateStr: string) => {
+    const v = history[dateStr] ?? 0;
+    if (isNumericHabit) return v >= targetForHabit;
+    return v === 1;
+  };
+
   const isDoneOrFrozen = (dateStr: string) => {
-    return (history[dateStr] && history[dateStr] > 0) || frozenDates.includes(dateStr);
+    return isDayCompleted(dateStr) || frozenDates.includes(dateStr);
   };
 
   const isActuallyDone = (dateStr: string) => {
-    return history[dateStr] && history[dateStr] > 0;
+    return isDayCompleted(dateStr);
   };
 
   // Weekly-target streak (e.g. 4x/minggu): streak = minggu beruntun yang targetnya tercapai

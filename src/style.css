@@ -7,6 +7,11 @@
     --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
   }
+  html { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+  body { font-family: var(--font-sans); line-height: 1.5; letter-spacing: -0.01em; }
+  h1, h2, h3, h4, h5, h6 { font-family: var(--font-sans); letter-spacing: -0.02em; }
+  /* HabitModal hierarchy: mono hanya untuk label meta, bukan body */
+  label, [class*="font-mono"] { letter-spacing: 0.02em; }
 }
 
 .font-pixel {
@@ -48,6 +53,23 @@
 ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 ::view-transition-old(root) { z-index: 1; }
 ::view-transition-new(root) { z-index: 9999; }
+
+/* Modal transitions — overlay fade + card scale spring */
+@keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalScaleIn {
+  from { opacity: 0; transform: scale(0.94) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-overlay {
+  animation: modalFadeIn 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.modal-card {
+  animation: modalScaleIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 60ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay, .modal-card { animation: none !important; }
+}
 
 /* Block pop animation */
 @keyframes blockPop {
