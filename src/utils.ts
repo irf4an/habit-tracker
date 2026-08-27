@@ -95,6 +95,14 @@ export function freezeRemaining(frozenDates: string[], dateStr: string, weeklyLi
 }
 
 // Schedule helpers for streak logic per frequency
+function isScheduledDate(d: Date, freq?: Habit['frequency']): boolean {
+  if (!freq || freq === 'everyday' || freq === 'weekly_target') return true;
+  const day = d.getDay(); // 0 Sun .. 6 Sat
+  if (freq === 'weekdays') return day >= 1 && day <= 5;
+  if (freq === 'weekends') return day === 0 || day === 6;
+  return true;
+}
+
 function getWeekStart(d: Date): Date {
   // Monday = 0 .. Sunday = 6 (ISO)
   const day = d.getDay(); // 0 Sun .. 6 Sat
@@ -228,75 +236,123 @@ export function calculateStreak(
     };
   }
 
-  // Daily / weekdays / weekends: streak harian (existing logic)
-  const todayStr = getTodayString();
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = formatDate(yesterday);
+  // Daily / weekdays / weekends: streak harian terjadwal (mengabaikan off-days)
+  const freq = habit?.frequency || 'everyday';
+  const today = startOfToday();
+
+  // Cari tanggal terjadwal terakhir (hari ini jika terjadwal, atau tanggal jadwal sebelumnya)
+  const getPreviousScheduledDate = (from: Date): Date => {
+    const cur = new Date(from);
+    cur.setDate(cur.getDate() - 1);
+    while (!isScheduledDate(cur, freq)) {
+      cur.setDate(cur.getDate() - 1);
+    }
+    return cur;
+  };
+
+  const getLatestScheduledDate = (from: Date): Date => {
+    const cur = new Date(from);
+    while (!isScheduledDate(cur, freq)) {
+      cur.setDate(cur.getDate() - 1);
+    }
+    return cur;
+  };
 
   let currentStreak = 0;
-  let checkDate = new Date();
+  const isTodaySched = isScheduledDate(today, freq);
+  const latestSched = getLatestScheduledDate(today);
+  const latestSchedStr = formatDate(latestSched);
 
-  if (isDoneOrFrozen(todayStr)) {
-    while (true) {
-      const s = formatDate(checkDate);
-      if (isDoneOrFrozen(s)) {
-        if (isActuallyDone(s)) currentStreak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else {
-        break;
+  if (isTodaySched) {
+    if (isDoneOrFrozen(latestSchedStr)) {
+      let cur = new Date(latestSched);
+      while (true) {
+        const s = formatDate(cur);
+        if (isDoneOrFrozen(s)) {
+          if (isActuallyDone(s)) currentStreak++;
+          cur = getPreviousScheduledDate(cur);
+        } else {
+          break;
+        }
+      }
+    } else {
+      // Hari ini terjadwal tapi belum dicentang, cek apakah jadwal sebelumnya selesai (grace period)
+      const prevSched = getPreviousScheduledDate(latestSched);
+      const prevSchedStr = formatDate(prevSched);
+      if (isDoneOrFrozen(prevSchedStr)) {
+        let cur = new Date(prevSched);
+        while (true) {
+          const s = formatDate(cur);
+          if (isDoneOrFrozen(s)) {
+            if (isActuallyDone(s)) currentStreak++;
+            cur = getPreviousScheduledDate(cur);
+          } else {
+            break;
+          }
+        }
       }
     }
-  } else if (isDoneOrFrozen(yesterdayStr)) {
-    checkDate.setDate(checkDate.getDate() - 1);
-    while (true) {
-      const s = formatDate(checkDate);
-      if (isDoneOrFrozen(s)) {
-        if (isActuallyDone(s)) currentStreak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else {
-        break;
+  } else {
+    // Hari ini adalah off-day (mis. sekarang hari kerja untuk habit weekend), streak tetap utuh dari weekend terakhir
+    if (isDoneOrFrozen(latestSchedStr)) {
+      let cur = new Date(latestSched);
+      while (true) {
+        const s = formatDate(cur);
+        if (isDoneOrFrozen(s)) {
+          if (isActuallyDone(s)) currentStreak++;
+          cur = getPreviousScheduledDate(cur);
+        } else {
+          break;
+        }
       }
     }
   }
 
-  let bestStreak = 0;
+  // Hitung best streak sepanjang 365 hari ke belakang
+  let bestStreak = currentStreak;
   let tempStreak = 0;
   let completedCount = 0;
 
-  const yearAgo = new Date();
+  const yearAgo = new Date(today);
   yearAgo.setDate(yearAgo.getDate() - 364);
 
-  const cur = new Date(yearAgo);
-  const today2 = new Date();
-
-  while (cur.getTime() <= today2.getTime()) {
-    const s = formatDate(cur);
-    if (isDoneOrFrozen(s)) {
-      if (isActuallyDone(s)) {
-        completedCount++;
-        tempStreak++;
+  let curScan = new Date(yearAgo);
+  while (curScan.getTime() <= today.getTime()) {
+    const s = formatDate(curScan);
+    if (isScheduledDate(curScan, freq)) {
+      if (isDoneOrFrozen(s)) {
+        if (isActuallyDone(s)) {
+          completedCount++;
+          tempStreak++;
+        }
+        if (tempStreak > bestStreak) bestStreak = tempStreak;
+      } else {
+        tempStreak = 0;
       }
-      if (tempStreak > bestStreak) bestStreak = tempStreak;
-    } else {
-      tempStreak = 0;
     }
-    cur.setDate(cur.getDate() + 1);
+    curScan.setDate(curScan.getDate() + 1);
   }
 
   if (currentStreak > bestStreak) bestStreak = currentStreak;
 
-  const past30 = new Date();
+  // Completion rate 30 hari: hanya bandingkan dengan jumlah hari terjadwal dalam 30 hari terakhir
+  const past30 = new Date(today);
   past30.setDate(past30.getDate() - 29);
+  let past30ScheduledCount = 0;
   let past30Completed = 0;
-  const pCur = new Date(past30);
-  while (pCur.getTime() <= today2.getTime()) {
-    const s = formatDate(pCur);
-    if (isActuallyDone(s)) past30Completed++;
+  let pCur = new Date(past30);
+  while (pCur.getTime() <= today.getTime()) {
+    if (isScheduledDate(pCur, freq)) {
+      past30ScheduledCount++;
+      const s = formatDate(pCur);
+      if (isActuallyDone(s)) past30Completed++;
+    }
     pCur.setDate(pCur.getDate() + 1);
   }
 
-  const completionRate = Math.round((past30Completed / 30) * 100);
+  const completionRate = past30ScheduledCount > 0
+    ? Math.round((past30Completed / past30ScheduledCount) * 100)
+    : 0;
 
   return {
     currentStreak,
