@@ -174,13 +174,42 @@ export const HabitModal: React.FC<HabitModalProps> = ({
             </div>
           </div>
 
+          {/* Time of Day Direct Picker (Habit Stacking v1.1 - Promoted to main view) */}
+          <div>
+            <p className={`block text-xs font-medium mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Waktu pelaksanaan (Habit Stacking)</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { id: 'morning', label: 'Pagi', icon: '🌅' },
+                { id: 'afternoon', label: 'Siang', icon: '☀️' },
+                { id: 'evening', label: 'Malam', icon: '🌙' },
+                { id: 'anytime', label: 'Bebas', icon: '⚡' },
+              ].map((t) => (
+                <button
+                  type="button"
+                  key={t.id}
+                  onClick={() => setTimeOfDay(t.id as TimeOfDay)}
+                  className={`py-2 px-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border flex flex-col items-center gap-0.5 text-center ${
+                    timeOfDay === t.id
+                      ? 'bg-[#8338ec] text-white border-[#8338ec] shadow-md shadow-[#8338ec]/25'
+                      : isDarkMode
+                      ? 'bg-[#0f0f16] border-[#222230] text-zinc-400 hover:text-zinc-200'
+                      : 'bg-zinc-100 border-zinc-300 text-zinc-600 hover:text-zinc-900'
+                  }`}
+                >
+                  <span className="text-base">{t.icon}</span>
+                  <span>{t.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={() => setShowAdvanced((v) => !v)}
             aria-expanded={showAdvanced}
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-xs font-semibold cursor-pointer ${isDarkMode ? 'bg-[#0d0d13] border-[#20202e] text-zinc-300 hover:text-white' : 'bg-zinc-50 border-zinc-200 text-zinc-700'}`}
           >
-            <span className="flex items-center gap-1.5"><Sliders className="w-3.5 h-3.5" /> Mau diatur lebih detail?</span>
+            <span className="flex items-center gap-1.5"><Sliders className="w-3.5 h-3.5" /> Pengaturan lanjutan (Target angka, Frekuensi)</span>
             <span className={`transition-transform ${showAdvanced ? 'rotate-180' : ''}`}>▾</span>
           </button>
           {showAdvanced && (
@@ -234,35 +263,6 @@ export const HabitModal: React.FC<HabitModalProps> = ({
               </div>
             </div>
           )}
-
-          {/* Time of Day (Habit Stacking v1.1) */}
-          <div>
-            <p className={`block text-xs font-medium mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Waktu pelaksanaan (Habit Stacking)</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {[
-                { id: 'morning', label: 'Pagi', icon: '🌅', sub: '05:00 - 11:59' },
-                { id: 'afternoon', label: 'Siang', icon: '☀️', sub: '12:00 - 16:59' },
-                { id: 'evening', label: 'Malam', icon: '🌙', sub: '17:00 - 23:59' },
-                { id: 'anytime', label: 'Bebas', icon: '⚡', sub: 'Kapan saja' },
-              ].map((t) => (
-                <button
-                  type="button"
-                  key={t.id}
-                  onClick={() => setTimeOfDay(t.id as TimeOfDay)}
-                  className={`py-2 px-2.5 rounded-xl text-xs font-medium transition-all cursor-pointer border flex flex-col items-center gap-0.5 text-center ${
-                    timeOfDay === t.id
-                      ? 'bg-[#8338ec] text-white border-[#8338ec] font-semibold shadow-md shadow-[#8338ec]/25'
-                      : isDarkMode
-                      ? 'bg-[#101016] border-[#222230] text-zinc-400 hover:text-zinc-200'
-                      : 'bg-zinc-100 border-zinc-300 text-zinc-600 hover:text-zinc-900'
-                  }`}
-                >
-                  <span className="text-sm">{t.icon}</span>
-                  <span>{t.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
 
           <div>
             <p className={`block text-xs font-medium mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Mau dijadwalkan kapan?</p>

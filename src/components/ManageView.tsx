@@ -130,6 +130,17 @@ export const ManageView: React.FC<ManageViewProps> = ({
                       {habit.name}
                     </h4>
                     <span className="w-2 h-2 rounded-full inline-block shrink-0" style={{ backgroundColor: habit.color }} />
+                    {habit.timeOfDay && habit.timeOfDay !== 'anytime' && (
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border shrink-0 inline-flex items-center gap-1 leading-none ${
+                        habit.timeOfDay === 'morning'
+                          ? isDarkMode ? 'text-amber-300 bg-amber-500/10 border-amber-500/25' : 'text-amber-800 bg-amber-50 border-amber-300'
+                          : habit.timeOfDay === 'afternoon'
+                          ? isDarkMode ? 'text-sky-300 bg-sky-500/10 border-sky-500/25' : 'text-sky-800 bg-sky-50 border-sky-300'
+                          : isDarkMode ? 'text-indigo-300 bg-indigo-500/10 border-indigo-500/25' : 'text-indigo-800 bg-indigo-50 border-indigo-300'
+                      }`}>
+                        <span>{habit.timeOfDay === 'morning' ? '🌅 Pagi' : habit.timeOfDay === 'afternoon' ? '☀️ Siang' : '🌙 Malam'}</span>
+                      </span>
+                    )}
                     {habit.category && (
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border shrink-0 inline-flex items-center gap-1 leading-none ${
                         isDarkMode ? 'text-zinc-300 bg-[#161622] border-[#272738]' : 'text-zinc-600 bg-white border-zinc-200'

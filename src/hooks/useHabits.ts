@@ -122,6 +122,7 @@ export function useHabits(userId: string | null) {
         unit: data.unit,
         frequency: data.frequency || 'everyday',
         weeklyTargetDays: data.weeklyTargetDays,
+        timeOfDay: data.timeOfDay || 'anytime',
         createdAt: getTodayString(),
         history: {},
         notes: {},
