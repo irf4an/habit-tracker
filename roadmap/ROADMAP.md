@@ -13,8 +13,8 @@ Dokumen ini memetakan tahapan rilis fitur berdasarkan prioritas psikologi kebias
   - Tag waktu pelaksanaan: Pagi (*Morning*), Siang (*Afternoon*), Malam (*Evening*), Kapan Saja (*Anytime*).
   - Filter cepat di atas beranda: [Semua Waktu | 🌅 Pagi | ☀️ Siang | 🌙 Malam].
   - Badge waktu minimalis di kartu habit.
-- [x] **Quick Evening Check-in Sheet**
-  - Modal bottom sheet 1-tap check-in harian tanpa scroll panjang (lazy-loaded).
+- [ ] **Quick Evening Check-in Sheet** — Dihentikan (dipindah ke *Evening Push Notification* di `useReminders`)
+  - Diputuskan tidak dilanjutkan karena menumpuk section di beranda (Calendar overload) untuk user baru.
 
 ---
 

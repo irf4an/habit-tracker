@@ -1,4 +1,4 @@
-import React, { useState, useRef, lazy, Suspense, useCallback } from 'react';
+import React, { useState, useRef, lazy, Suspense } from 'react';
 import { Habit, ViewTab, QuietHours } from './types';
 import { HabitCard } from './components/HabitCard';
 import { StatsView } from './components/StatsView';
@@ -27,7 +27,6 @@ const AchievementsModal = lazy(() => import('./components/AchievementsModal').th
 const ProfileModal = lazy(() => import('./components/ProfileModal').then((m) => ({ default: m.ProfileModal })));
 const AuthModal = lazy(() => import('./components/AuthModal').then((m) => ({ default: m.AuthModal })));
 const HelpModal = lazy(() => import('./components/HelpModal').then((m) => ({ default: m.HelpModal })));
-const QuickCheckInSheet = lazy(() => import('./components/QuickCheckInSheet').then((m) => ({ default: m.QuickCheckInSheet })));
 
 export function App() {
   const [activeTab, setActiveTab] = useState<ViewTab>('calendar');
@@ -48,7 +47,6 @@ export function App() {
   const [showAchievements, setShowAchievements] = useState<boolean>(false);
   const [showProfile, setShowProfile] = useState<boolean>(false);
   const [showAuth, setShowAuth] = useState<boolean>(false);
-  const [showQuickCheckIn, setShowQuickCheckIn] = useState<boolean>(false);
   const [pomodoroSession, setPomodoroSession] = useState<PomodoroSession | null>(null);
 
   const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
@@ -102,10 +100,10 @@ export function App() {
   // Hook 5: Global Keyboard Shortcuts (N, 1-9)
   useKeyboardShortcuts({
     habits,
-    onOpenNewHabit: useCallback(() => {
+    onOpenNewHabit: () => {
       setEditingHabit(null);
       setIsModalOpen(true);
-    }, []),
+    },
     onToggleDate: handleToggleDate,
   });
 
@@ -330,39 +328,6 @@ export function App() {
           </div>
         )}
 
-        {/* Quick Evening Check-in Banner */}
-        {activeTab === 'calendar' && (() => {
-          const today = getTodayString();
-          const remaining = activeHabits.filter((h) => {
-            const v = h.history[today] || 0;
-            const t = h.targetValue || 1;
-            return h.type === 'numeric' ? v < t : v !== 1;
-          }).length;
-          if (activeHabits.length === 0 || remaining === 0) return null;
-          return (
-            <button
-              type="button"
-              onClick={() => setShowQuickCheckIn(true)}
-              className={`w-full mb-4 flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border text-left cursor-pointer transition-all active:scale-[0.99] ${
-                isDarkMode
-                  ? 'bg-[#8338ec]/10 border-[#8338ec]/30 hover:bg-[#8338ec]/15 text-white'
-                  : 'bg-violet-50 border-violet-200 hover:bg-violet-100 text-zinc-900'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#8338ec] flex items-center justify-center text-white shrink-0">
-                  <MaterialIcon name="check" size={18} color="#ffffff" />
-                </div>
-                <div>
-                  <p className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{remaining} kebiasaan tersisa hari ini</p>
-                  <p className={`text-xs ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>Tap untuk checklist cepat sebelum tidur</p>
-                </div>
-              </div>
-              <span className="px-3 py-1.5 rounded-full bg-[#8338ec] text-white text-xs font-bold shrink-0">Buka →</span>
-            </button>
-          );
-        })()}
-
         {/* TAB CONTENTS */}
         {activeTab === 'calendar' && (
           <div className="space-y-4">
@@ -549,19 +514,6 @@ export function App() {
               setIsModalOpen(true);
             }}
             isDarkMode={isDarkMode}
-          />
-        )}
-      </Suspense>
-
-      {/* Quick Check-in Sheet */}
-      <Suspense fallback={null}>
-        {showQuickCheckIn && (
-          <QuickCheckInSheet
-            isOpen={showQuickCheckIn}
-            onClose={() => setShowQuickCheckIn(false)}
-            habits={activeHabits}
-            isDarkMode={isDarkMode}
-            onToggleDate={handleToggleDate}
           />
         )}
       </Suspense>
