@@ -1,5 +1,7 @@
 // Browser Web Notifications Helper — now with snooze + quiet-hours utils
 
+import { playReminderChime } from './sound';
+
 export async function requestNotificationPermission(): Promise<boolean> {
   if (typeof window === 'undefined' || !('Notification' in window)) {
     alert('Browser kamu belum mendukung Web Notifications.');
@@ -17,7 +19,7 @@ export function sendHabitNotification(title: string, body: string, iconEmoji: st
   if (typeof window === 'undefined' || !('Notification' in window)) return null;
   if (Notification.permission !== 'granted') return null;
   // Local chime + haptic — Web Notifications on desktop are silent by spec, mobile needs vibrate
-  try { import('./sound').then((m) => m.playReminderChime()); } catch {}
+  try { playReminderChime(); } catch {}
   try { if ('vibrate' in navigator) navigator.vibrate([220, 100, 220]); } catch {}
   try {
     const notif = new Notification(`${iconEmoji} ${title}`, {

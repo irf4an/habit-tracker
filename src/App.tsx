@@ -1,18 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { flushSync } from 'react-dom';
 import { Habit, ViewTab } from './types';
 import { HabitCard } from './components/HabitCard';
-import { HabitModal } from './components/HabitModal';
 import { StatsView } from './components/StatsView';
 import { ManageView } from './components/ManageView';
-import { ShareCardModal } from './components/ShareCardModal';
-import { OnboardingModal } from './components/OnboardingModal';
-import { PomodoroTimer, PomodoroSession } from './components/PomodoroTimer';
-import { AchievementsModal } from './components/AchievementsModal';
-import { ProfileModal } from './components/ProfileModal';
-import { AuthModal } from './components/AuthModal';
-import { HelpModal } from './components/HelpModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { PomodoroSession } from './components/PomodoroTimer';
 import { calculateBadges } from './achievements';
 import { sendHabitNotification, isInQuietHours } from './notification';
 import { playCheckSound, playCelebrationSound } from './sound';
@@ -30,6 +23,16 @@ import { HelpCircle, Sparkles, Sun, Moon, User } from 'lucide-react';
 import { MaterialIcon } from './components/MaterialIcon';
 import { FluentOutlineIcon } from './components/FluentOutlineIcon';
 import confetti from 'canvas-confetti';
+
+// Lazy Loaded Modals for Instant Initial Load & Code-Splitting (ADR-0002)
+const HabitModal = lazy(() => import('./components/HabitModal').then((m) => ({ default: m.HabitModal })));
+const ShareCardModal = lazy(() => import('./components/ShareCardModal').then((m) => ({ default: m.ShareCardModal })));
+const OnboardingModal = lazy(() => import('./components/OnboardingModal').then((m) => ({ default: m.OnboardingModal })));
+const PomodoroTimer = lazy(() => import('./components/PomodoroTimer').then((m) => ({ default: m.PomodoroTimer })));
+const AchievementsModal = lazy(() => import('./components/AchievementsModal').then((m) => ({ default: m.AchievementsModal })));
+const ProfileModal = lazy(() => import('./components/ProfileModal').then((m) => ({ default: m.ProfileModal })));
+const AuthModal = lazy(() => import('./components/AuthModal').then((m) => ({ default: m.AuthModal })));
+const HelpModal = lazy(() => import('./components/HelpModal').then((m) => ({ default: m.HelpModal })));
 
 const STORAGE_KEY = 'minimal_habit_tracker_data_v2';
 
@@ -781,74 +784,102 @@ export function App() {
       />
 
       {/* Pomodoro Timer Modal & Floating Widget */}
-      <PomodoroTimer
-        session={pomodoroSession}
-        onUpdateSession={setPomodoroSession}
-        onCompleteHabit={handlePomodoroComplete}
-        isDarkMode={isDarkMode}
-      />
+      <Suspense fallback={null}>
+        <PomodoroTimer
+          session={pomodoroSession}
+          onUpdateSession={setPomodoroSession}
+          onCompleteHabit={handlePomodoroComplete}
+          isDarkMode={isDarkMode}
+        />
+      </Suspense>
 
       {/* Habit Create / Edit Modal */}
-      <HabitModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveHabit}
-        initialHabit={editingHabit}
-        isDarkMode={isDarkMode}
-      />
+      <Suspense fallback={null}>
+        {isModalOpen && (
+          <HabitModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSave={handleSaveHabit}
+            initialHabit={editingHabit}
+            isDarkMode={isDarkMode}
+          />
+        )}
+      </Suspense>
 
       {/* Share Card Modal */}
-      {shareHabit && (
-        <ShareCardModal habit={shareHabit} onClose={() => setShareHabit(null)} isDarkMode={isDarkMode} />
-      )}
+      <Suspense fallback={null}>
+        {shareHabit && (
+          <ShareCardModal habit={shareHabit} onClose={() => setShareHabit(null)} isDarkMode={isDarkMode} />
+        )}
+      </Suspense>
 
       {/* Help / Shortcuts Modal */}
-      <HelpModal
-        isOpen={showHelp}
-        onClose={() => setShowHelp(false)}
-        isDarkMode={isDarkMode}
-      />
+      <Suspense fallback={null}>
+        {showHelp && (
+          <HelpModal
+            isOpen={showHelp}
+            onClose={() => setShowHelp(false)}
+            isDarkMode={isDarkMode}
+          />
+        )}
+      </Suspense>
 
       {/* Profile Modal */}
-      <ProfileModal
-        isOpen={showProfile}
-        onClose={() => setShowProfile(false)}
-        profile={userProfile}
-        onSaveProfile={handleSaveProfile}
-        habits={habits}
-        userEmail={userEmail}
-        onOpenAuth={() => setShowAuth(true)}
-        isDarkMode={isDarkMode}
-      />
+      <Suspense fallback={null}>
+        {showProfile && (
+          <ProfileModal
+            isOpen={showProfile}
+            onClose={() => setShowProfile(false)}
+            profile={userProfile}
+            onSaveProfile={handleSaveProfile}
+            habits={habits}
+            userEmail={userEmail}
+            onOpenAuth={() => setShowAuth(true)}
+            isDarkMode={isDarkMode}
+          />
+        )}
+      </Suspense>
 
       {/* Auth / Cloud Sync Modal */}
-      <AuthModal
-        isOpen={showAuth}
-        onClose={() => setShowAuth(false)}
-        userEmail={userEmail}
-        onAuthSuccess={handleAuthSuccess}
-        onSignOut={handleSignOut}
-        isDarkMode={isDarkMode}
-      />
+      <Suspense fallback={null}>
+        {showAuth && (
+          <AuthModal
+            isOpen={showAuth}
+            onClose={() => setShowAuth(false)}
+            userEmail={userEmail}
+            onAuthSuccess={handleAuthSuccess}
+            onSignOut={handleSignOut}
+            isDarkMode={isDarkMode}
+          />
+        )}
+      </Suspense>
 
       {/* Achievements Modal */}
-      <AchievementsModal
-        isOpen={showAchievements}
-        onClose={() => setShowAchievements(false)}
-        habits={habits}
-        isDarkMode={isDarkMode}
-      />
+      <Suspense fallback={null}>
+        {showAchievements && (
+          <AchievementsModal
+            isOpen={showAchievements}
+            onClose={() => setShowAchievements(false)}
+            habits={habits}
+            isDarkMode={isDarkMode}
+          />
+        )}
+      </Suspense>
 
       {/* Interactive Onboarding Tour */}
-      <OnboardingModal
-        isOpen={showOnboarding}
-        onClose={handleCloseOnboarding}
-        onStartHabit={() => {
-          setEditingHabit(null);
-          setIsModalOpen(true);
-        }}
-        isDarkMode={isDarkMode}
-      />
+      <Suspense fallback={null}>
+        {showOnboarding && (
+          <OnboardingModal
+            isOpen={showOnboarding}
+            onClose={handleCloseOnboarding}
+            onStartHabit={() => {
+              setEditingHabit(null);
+              setIsModalOpen(true);
+            }}
+            isDarkMode={isDarkMode}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

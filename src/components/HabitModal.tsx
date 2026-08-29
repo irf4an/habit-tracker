@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Habit, HabitType, FrequencyType } from '../types';
 import { X, Sliders, Hash, Calendar, Archive, Bell } from 'lucide-react';
-import { requestNotificationPermission } from '../notification';
+import { requestNotificationPermission, sendHabitNotification } from '../notification';
 
 interface HabitModalProps {
   isOpen: boolean;
@@ -302,7 +302,6 @@ export const HabitModal: React.FC<HabitModalProps> = ({
                   <label htmlFor="habit-reminder-time" className={`text-[11px] ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Jam berapa enaknya?</label>
                   <input id="habit-reminder-time" type="time" value={reminderTime} onChange={(e) => setReminderTime(e.target.value)} className={`border rounded-lg px-2.5 py-1 text-xs font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0b0b10] border-[#2a2a3c] text-white' : 'bg-white border-zinc-300 text-zinc-900'}`} />
                   <button type="button" onClick={async () => {
-                    const { sendHabitNotification, requestNotificationPermission } = await import('../notification');
                     const ok = await requestNotificationPermission();
                     if (!ok) return;
                     sendHabitNotification(`Test — ${name || 'Habit'}`, 'Hai, ini pengingat manis darimu sendiri 🤗', emoji || '🔔');
