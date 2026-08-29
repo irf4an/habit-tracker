@@ -2,6 +2,8 @@ export type HabitType = 'boolean' | 'numeric';
 
 export type FrequencyType = 'everyday' | 'weekdays' | 'weekends' | 'weekly_target';
 
+export type TimeOfDay = 'anytime' | 'morning' | 'afternoon' | 'evening';
+
 export interface Habit {
   id: string;
   name: string;
@@ -17,6 +19,7 @@ export interface Habit {
   unit?: string; // e.g. 'pages', 'mins', 'ml', 'km'
   frequency?: FrequencyType;
   weeklyTargetDays?: number;
+  timeOfDay?: TimeOfDay; // 'morning' | 'afternoon' | 'evening' | 'anytime'
   category?: string;
   archived?: boolean;
 

@@ -37,6 +37,7 @@ export function App() {
     return true;
   });
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedTimeOfDay, setSelectedTimeOfDay] = useState<string>('all');
 
   // Modal Visibility States
   const [showHelp, setShowHelp] = useState<boolean>(false);
@@ -166,13 +167,24 @@ export function App() {
     e.target.value = '';
   };
 
-  // Derived Values
+  // Filter habits for calendar view (Category & Time of Day)
   const categories = ['All', ...Array.from(new Set(habits.map((h) => h.category).filter(Boolean)))];
   const activeHabits = habits.filter((h) => !h.archived);
   const { unlockedCount, totalCount, level } = calculateBadges(habits);
+  
   const filteredHabits = activeHabits.filter((h) => {
-    if (selectedCategory === 'All') return true;
-    return h.category === selectedCategory;
+    // Filter Category
+    if (selectedCategory !== 'All' && h.category !== selectedCategory) {
+      return false;
+    }
+    // Filter Time of Day
+    if (selectedTimeOfDay !== 'all') {
+      const habitTime = h.timeOfDay || 'anytime';
+      if (selectedTimeOfDay !== habitTime) {
+        return false;
+      }
+    }
+    return true;
   });
 
   return (
@@ -238,45 +250,74 @@ export function App() {
 
       {/* Main Container */}
       <main id="main-content" tabIndex={-1} className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 pb-24 sm:pb-10 outline-none">
-        {/* Category Filter & Full View Toggle Bar */}
+        {/* Time of Day & Category Filter Bar */}
         {activeTab === 'calendar' && (
-          <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
-            {/* Category Filter Pills */}
+          <div className="space-y-2.5 mb-4">
+            {/* Row 1: Time of Day Filter (Habit Stacking v1.1) + Full View Toggle */}
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-1.5 p-1 rounded-full border bg-zinc-100/80 dark:bg-[#13131b] border-zinc-200 dark:border-[#20202e]">
+                {[
+                  { id: 'all', label: 'Semua Waktu', icon: '⚡' },
+                  { id: 'morning', label: 'Pagi', icon: '🌅' },
+                  { id: 'afternoon', label: 'Siang', icon: '☀️' },
+                  { id: 'evening', label: 'Malam', icon: '🌙' },
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setSelectedTimeOfDay(t.id)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1 leading-none ${
+                      selectedTimeOfDay === t.id
+                        ? 'bg-[#8338ec] text-white shadow-sm'
+                        : isDarkMode
+                        ? 'text-zinc-400 hover:text-zinc-200'
+                        : 'text-zinc-600 hover:text-zinc-900'
+                    }`}
+                  >
+                    <span>{t.icon}</span>
+                    <span className="hidden sm:inline">{t.label}</span>
+                    <span className="sm:hidden">{t.label === 'Semua Waktu' ? 'Semua' : t.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Full View Toggle */}
+              <div className="flex items-center gap-2.5 ml-auto">
+                <span className={`text-xs font-mono select-none ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>Full View</span>
+                <button
+                  type="button"
+                  onClick={() => setIsFullView((v) => !v)}
+                  className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
+                    isFullView ? 'bg-[#8338ec]' : isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'
+                  }`}
+                >
+                  <div
+                    className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform ${
+                      isFullView ? 'left-6' : 'left-1'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Row 2: Category Filter Pills */}
             <div className="flex items-center gap-1.5 flex-wrap">
               {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat!)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer border inline-flex items-center gap-1.5 leading-none ${
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer border inline-flex items-center gap-1.5 leading-none ${
                     selectedCategory === cat
-                      ? 'bg-[#8338ec] border-[#8338ec] text-white font-semibold shadow-md shadow-[#8338ec]/25'
+                      ? 'bg-[#8338ec]/20 border-[#8338ec] text-[#8338ec] font-semibold shadow-xs'
                       : isDarkMode
-                      ? 'bg-[#14141c] border-[#8338ec]/25 text-zinc-400 hover:text-zinc-200'
+                      ? 'bg-[#14141c] border-[#222230] text-zinc-400 hover:text-zinc-200'
                       : 'bg-white border-zinc-300 text-zinc-600 hover:text-zinc-900 hover:border-zinc-400'
                   }`}
                 >
-                  <MaterialIcon name={cat === 'All' ? 'apps' : 'label'} size={14} />
+                  <MaterialIcon name={cat === 'All' ? 'apps' : 'label'} size={12} />
                   {cat}
                 </button>
               ))}
-            </div>
-
-            {/* Full View Toggle */}
-            <div className="flex items-center gap-2.5">
-              <span className={`text-xs font-mono select-none ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>Full View</span>
-              <button
-                type="button"
-                onClick={() => setIsFullView((v) => !v)}
-                className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
-                  isFullView ? 'bg-[#8338ec]' : isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'
-                }`}
-              >
-                <div
-                  className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform ${
-                    isFullView ? 'left-6' : 'left-1'
-                  }`}
-                />
-              </button>
             </div>
           </div>
         )}

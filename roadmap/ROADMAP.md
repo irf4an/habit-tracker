@@ -9,10 +9,10 @@ Dokumen ini memetakan tahapan rilis fitur berdasarkan prioritas psikologi kebias
 ### 🚀 Versi 1.1 — Daily Flow & Habit Stacking
 **Fokus:** Mengurangi beban visual dan memperjelas pemicu waktu harian.
 
-- [ ] **Time-of-Day Grouping (Habit Stacking)**
+- [x] **Time-of-Day Grouping (Habit Stacking)**
   - Tag waktu pelaksanaan: Pagi (*Morning*), Siang (*Afternoon*), Malam (*Evening*), Kapan Saja (*Anytime*).
-  - Filter cepat di atas beranda: [Semua | 🌅 Pagi | ☀️ Siang | 🌙 Malam].
-  - Rekomendasi urutan pemicu kebiasaan (*Habit Stacking Prompt*: "Setelah [Habit A], lakukan [Habit B]").
+  - Filter cepat di atas beranda: [Semua Waktu | 🌅 Pagi | ☀️ Siang | 🌙 Malam].
+  - Badge waktu minimalis di kartu habit.
 - [ ] **Quick Evening Check-in Sheet**
   - Modal checklist kilat satu layar sebelum tidur untuk mencentang semua sisa habit hari ini tanpa scroll.
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Habit, HabitType, FrequencyType } from '../types';
-import { X, Sliders, Hash, Calendar, Archive, Bell } from 'lucide-react';
+import { Habit, HabitType, FrequencyType, TimeOfDay } from '../types';
+import { X, Sliders, Hash, Calendar, Archive, Bell, Sun, Sunset, Moon, Sparkles } from 'lucide-react';
 import { requestNotificationPermission, sendHabitNotification } from '../notification';
 
 interface HabitModalProps {
@@ -41,6 +41,7 @@ export const HabitModal: React.FC<HabitModalProps> = ({
   const [unit, setUnit] = useState('');
   const [frequency, setFrequency] = useState<FrequencyType>('everyday');
   const [weeklyTargetDays, setWeeklyTargetDays] = useState<number>(4);
+  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>('anytime');
   const [isArchived, setIsArchived] = useState<boolean>(false);
   const [reminderEnabled, setReminderEnabled] = useState<boolean>(false);
   const [reminderTime, setReminderTime] = useState<string>('20:00');
@@ -57,10 +58,11 @@ export const HabitModal: React.FC<HabitModalProps> = ({
       setUnit(initialHabit.unit || '');
       setFrequency(initialHabit.frequency || 'everyday');
       setWeeklyTargetDays(initialHabit.weeklyTargetDays || 4);
+      setTimeOfDay(initialHabit.timeOfDay || 'anytime');
       setIsArchived(!!initialHabit.archived);
       setReminderEnabled(!!initialHabit.reminderEnabled);
       setReminderTime(initialHabit.reminderTime || '20:00');
-      const hasAdvanced = !!(initialHabit.type === 'numeric' || initialHabit.frequency !== 'everyday' || initialHabit.reminderEnabled || initialHabit.category !== 'Fitness');
+      const hasAdvanced = !!(initialHabit.type === 'numeric' || initialHabit.frequency !== 'everyday' || initialHabit.timeOfDay !== 'anytime' || initialHabit.reminderEnabled || initialHabit.category !== 'Fitness');
       setShowAdvanced(hasAdvanced || !!initialHabit);
     } else {
       setName('');
@@ -72,6 +74,7 @@ export const HabitModal: React.FC<HabitModalProps> = ({
       setUnit('');
       setFrequency('everyday');
       setWeeklyTargetDays(4);
+      setTimeOfDay('anytime');
       setIsArchived(false);
       setReminderEnabled(false);
       setReminderTime('20:00');
@@ -112,6 +115,7 @@ export const HabitModal: React.FC<HabitModalProps> = ({
       unit: habitType === 'numeric' ? unit.trim() : undefined,
       frequency,
       weeklyTargetDays: frequency === 'weekly_target' ? weeklyTargetDays : undefined,
+      timeOfDay,
       archived: isArchived,
       reminderEnabled,
       reminderTime: reminderEnabled ? reminderTime : undefined,
@@ -230,6 +234,35 @@ export const HabitModal: React.FC<HabitModalProps> = ({
               </div>
             </div>
           )}
+
+          {/* Time of Day (Habit Stacking v1.1) */}
+          <div>
+            <p className={`block text-xs font-medium mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Waktu pelaksanaan (Habit Stacking)</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { id: 'morning', label: 'Pagi', icon: '🌅', sub: '05:00 - 11:59' },
+                { id: 'afternoon', label: 'Siang', icon: '☀️', sub: '12:00 - 16:59' },
+                { id: 'evening', label: 'Malam', icon: '🌙', sub: '17:00 - 23:59' },
+                { id: 'anytime', label: 'Bebas', icon: '⚡', sub: 'Kapan saja' },
+              ].map((t) => (
+                <button
+                  type="button"
+                  key={t.id}
+                  onClick={() => setTimeOfDay(t.id as TimeOfDay)}
+                  className={`py-2 px-2.5 rounded-xl text-xs font-medium transition-all cursor-pointer border flex flex-col items-center gap-0.5 text-center ${
+                    timeOfDay === t.id
+                      ? 'bg-[#8338ec] text-white border-[#8338ec] font-semibold shadow-md shadow-[#8338ec]/25'
+                      : isDarkMode
+                      ? 'bg-[#101016] border-[#222230] text-zinc-400 hover:text-zinc-200'
+                      : 'bg-zinc-100 border-zinc-300 text-zinc-600 hover:text-zinc-900'
+                  }`}
+                >
+                  <span className="text-sm">{t.icon}</span>
+                  <span>{t.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div>
             <p className={`block text-xs font-medium mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Mau dijadwalkan kapan?</p>
