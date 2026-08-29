@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Habit } from '../types';
 import { MaterialIcon } from './MaterialIcon';
 import { FluentOutlineIcon } from './FluentOutlineIcon';
-import { exportHabitsToCSV } from '../utils';
+import { exportHabitsToCSV, getTodayString } from '../utils';
 import { requestNotificationPermission, sendHabitNotification } from '../notification';
 import { QuietHours } from '../types';
 
@@ -265,7 +265,7 @@ export const ManageView: React.FC<ManageViewProps> = ({
         }}
       >
         <h3 className={`text-sm sm:text-base font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Cadangan Data & Quiet Hours</h3>
-        <p className={`text-xs mb-3 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>Simpan/pulihkan data, atur jam sunyi notifikasi, dan uji kirim.</p>
+        <p className={`text-xs mb-3 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>Simpan/pulihkan data dan atur jam sunyi notifikasi harian.</p>
         <div className={`mb-4 p-3 rounded-xl border flex flex-wrap items-center gap-3 ${isDarkMode ? 'bg-[#0f0f16] border-[#1e1e28]' : 'bg-zinc-50 border-zinc-200'}`}>
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={quietHours.enabled} onChange={(e) => onQuietHoursChange({ ...quietHours, enabled: e.target.checked })} className="accent-[#8338ec]" />
@@ -274,16 +274,6 @@ export const ManageView: React.FC<ManageViewProps> = ({
           <input type="time" value={quietHours.start} onChange={(e) => onQuietHoursChange({ ...quietHours, start: e.target.value })} disabled={!quietHours.enabled} className={`border rounded-lg px-2 py-1 text-xs font-mono ${isDarkMode ? 'bg-[#0a0a10] border-[#252538] text-white disabled:opacity-40' : 'bg-white border-zinc-300 text-zinc-900 disabled:opacity-40'}`} />
           <span className={`text-xs ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>sampai</span>
           <input type="time" value={quietHours.end} onChange={(e) => onQuietHoursChange({ ...quietHours, end: e.target.value })} disabled={!quietHours.enabled} className={`border rounded-lg px-2 py-1 text-xs font-mono ${isDarkMode ? 'bg-[#0a0a10] border-[#252538] text-white disabled:opacity-40' : 'bg-white border-zinc-300 text-zinc-900 disabled:opacity-40'}`} />
-          <button
-            onClick={async () => {
-              const ok = await requestNotificationPermission();
-              if (!ok) return;
-              sendHabitNotification('Test notifikasi', 'Jika kamu melihat ini, notifikasi sudah aktif.', '🔔');
-            }}
-            className={`ml-auto px-3 py-1.5 rounded-xl text-xs font-semibold border ${isDarkMode ? 'bg-[#1a1a28] border-[#2e2e40] text-zinc-200' : 'bg-zinc-100 border-zinc-300 text-zinc-800'}`}
-          >
-            Uji notifikasi
-          </button>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">

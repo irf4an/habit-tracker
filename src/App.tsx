@@ -70,7 +70,17 @@ export function App() {
   // Hook 1: Theme Management
   const { isDarkMode, toggleTheme } = useTheme();
 
-  // Hook 2: Habit Data & Operations
+  // Hook 2: User Profile & Cloud Auth
+  const {
+    userId,
+    userEmail,
+    userProfile,
+    handleAuthSuccess,
+    handleSignOut,
+    handleSaveProfile,
+  } = useAuthProfile([], () => {});
+
+  // Hook 3: Habit Data & Operations with Connected userId
   const {
     habits,
     setHabits,
@@ -82,17 +92,7 @@ export function App() {
     handleToggleArchive,
     handlePomodoroComplete,
     handleResetSample,
-  } = useHabits(null);
-
-  // Hook 3: User Profile & Cloud Auth
-  const {
-    userId,
-    userEmail,
-    userProfile,
-    handleAuthSuccess,
-    handleSignOut,
-    handleSaveProfile,
-  } = useAuthProfile(habits, setHabits);
+  } = useHabits(userId);
 
   // Hook 4: Daily Reminders & Quiet Hours
   useReminders(habits, setHabits, quietHours);
@@ -347,28 +347,37 @@ export function App() {
             ))}
 
             {filteredHabits.length === 0 && (
-              <div className={`border rounded-2xl p-8 sm:p-10 text-center transition-all ${isDarkMode ? 'bg-[#111116] border-[#1e1e28]' : 'bg-white border-zinc-200 shadow-sm'}`}>
-                <div className="flex items-center justify-center mb-3 text-[#8338ec]">
-                  <FluentOutlineIcon name="plant" size={36} color="#8338ec" />
+              <div className={`border rounded-3xl p-8 sm:p-12 text-center transition-all flex flex-col items-center justify-center ${isDarkMode ? 'bg-[#111116] border-[#8338ec]/35' : 'bg-white border-zinc-200 shadow-sm'}`}>
+                {/* Sprout in Pot Illustration (Tunas Tanaman dalam Pot) */}
+                <div className="relative mb-5 flex items-center justify-center">
+                  <div className={`w-20 h-20 rounded-3xl flex items-center justify-center border shadow-xl ${
+                    isDarkMode
+                      ? 'bg-gradient-to-br from-[#181828] to-[#12121d] border-[#8338ec]/40 text-[#a78bfa]'
+                      : 'bg-gradient-to-br from-purple-50 to-indigo-50/50 border-purple-200 text-[#8338ec]'
+                  }`}>
+                    <FluentOutlineIcon name="plant" size={40} />
+                  </div>
+                  {/* Floating badge sparkle */}
+                  <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#8338ec] text-white flex items-center justify-center shadow-md">
+                    <MaterialIcon name="local_fire_department" size={14} color="#ffffff" />
+                  </div>
                 </div>
-                <h3 className={`text-base font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
-                  {habits.length === 0 ? 'Belum ada kebiasaan' : 'Tidak ada yang cocok'}
+
+                <h3 className={`text-lg font-bold mb-1.5 tracking-tight ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
+                  {habits.length === 0 ? 'Belum Ada Kebiasaan' : 'Tidak Ada yang Cocok'}
                 </h3>
-                <p className={`text-sm mb-5 max-w-sm mx-auto ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                <p className={`text-xs sm:text-sm mb-6 max-w-sm mx-auto leading-relaxed ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
                   {habits.length === 0
-                    ? 'Mulai dari satu yang paling gampang — nanti kebiasaan lain tinggal ditambah.'
-                    : 'Coba ganti filter kategori atau buat kebiasaan baru.'}
+                    ? 'Mulai dari satu tunas kebiasaan kecil — siram konsistensinya setiap hari.'
+                    : 'Coba ubah filter kategori atau waktu di atas.'}
                 </p>
                 <button
                   onClick={() => { setEditingHabit(null); setIsModalOpen(true); }}
-                  className="px-5 py-2.5 bg-[#8338ec] hover:bg-[#722ed1] text-white rounded-full text-xs font-bold cursor-pointer shadow-lg shadow-[#8338ec]/25 active:scale-95 transition-all inline-flex items-center gap-1.5"
+                  className="px-6 py-3 bg-[#8338ec] hover:bg-[#722ed1] text-white rounded-full text-xs font-bold cursor-pointer shadow-lg shadow-[#8338ec]/30 active:scale-95 transition-all inline-flex items-center gap-2"
                 >
-                  <MaterialIcon name="add" size={16} color="#ffffff" />
+                  <MaterialIcon name="add" size={18} color="#ffffff" />
                   <span>Buat kebiasaan pertama</span>
                 </button>
-                {habits.length === 0 && (
-                  <p className={`text-xs mt-3 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>Tips: tekan N di keyboard untuk cepat.</p>
-                )}
               </div>
             )}
           </div>

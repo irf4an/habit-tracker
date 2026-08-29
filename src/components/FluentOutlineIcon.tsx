@@ -60,12 +60,20 @@ const fluentPaths: Record<string, React.ReactNode> = {
       fill="currentColor"
     />
   ),
-  // Fluent: Plant / Sprout 24 Outline (for empty states)
+  // Fluent: Clear Tunas / Tanaman Kecil dalam Pot (Sprout in Flowerpot)
   plant: (
-    <path
-      d="M12 21.25a.75.75 0 01-.75-.75v-7.5c0-1.8-1.46-3.25-3.25-3.25H6.5a4.5 4.5 0 01-4.5-4.5V4.5a.75.75 0 01.75-.75h.75a9.75 9.75 0 019.75 9.75v5.75a.75.75 0 01-.75.75zM3.5 5.25v.75a3 3 0 003 3H8c.97 0 1.75.78 1.75 1.75v1.89A8.26 8.26 0 003.5 5.25zm13.75 4.5a.75.75 0 01-.75-.75v-.75a3 3 0 00-3-3H12a.75.75 0 010-1.5h1.5a4.5 4.5 0 014.5 4.5v.75a.75.75 0 01-.75.75z"
-      fill="currentColor"
-    />
+    <g fill="currentColor">
+      {/* Daun Kiri */}
+      <path d="M11.5 6.2C8.2 6.5 6 9.3 6.5 12.8c2.8.2 5.5-1.5 5.8-4.8.1-.6-.2-1.3-.8-1.8z" opacity="0.9" />
+      {/* Daun Kanan */}
+      <path d="M12.5 4.5c.6.5 1 1.2.9 1.8-.3 3.3-3 5-5.8 4.8C7.1 7.6 9.3 4.8 12.5 4.5z" />
+      {/* Batang */}
+      <path d="M11.25 9v5h1.5V9c0-.4-.3-.75-.75-.75s-.75.35-.75.75z" />
+      {/* Bibir Pot */}
+      <rect x="5" y="14" width="14" height="2.5" rx="1.25" />
+      {/* Badan Pot Bunga */}
+      <path d="M6.5 17.5l1.2 4.2c.2.8.9 1.3 1.8 1.3h5c.9 0 1.6-.5 1.8-1.3l1.2-4.2H6.5z" opacity="0.85" />
+    </g>
   ),
   // Fluent: Leaf 24 Outline
   leaf: (

@@ -1,6 +1,6 @@
 # 0003. Pola Sinkronisasi Local-First & Outbox Queue
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Tanggal:** 2026-08-27
 - **Pengambil Keputusan:** Core Team
 
@@ -9,11 +9,14 @@ Saat ini fungsi `syncHabitToCloud()` bekerja secara *fire-and-forget*. Jika peng
 
 ## Keputusan Arsitektur
 Mengadopsi pola **Local-First Architecture** dengan **Mutation Outbox Queue**:
-1. **Source of Truth Lokal:** Seluruh aksi baca dan tulis pertama kali selalu ke LocalStorage/IndexedDB.
-2. **Outbox Queue:** Setiap mutasi (insert, update, delete) mencatat item mutasi ke dalam queue `pending_sync_queue` dengan `timestamp` ISO dan `operation_id`.
-3. **Auto-Retry & Online Listener:** Pasang listener `window.addEventListener('online', flushQueue)` dan background worker interval untuk menguras antrean mutasi ke Supabase.
-4. **Last-Write-Wins with Timestamp:** Resolusi konflik menggunakan field `updatedAt` pada level habit history.
+1. **Source of Truth Lokal:** Seluruh aksi baca dan tulis pertama kali selalu ke LocalStorage.
+2. **Outbox Queue (`minimal_habit_sync_outbox_v1`):** Setiap mutasi (insert, update, delete) dicatat ke antrean lokal dengan `timestamp` dan de-duplikasi otomatis per habit ID.
+3. **Auto-Flush Listeners:**
+   - Listener event `window.addEventListener('online', flushOutboxQueue)` otomatis menguras antrean saat jaringan terhubung kembali.
+   - Listener `visibilitychange` menguras antrean saat tab browser dibuka kembali.
+   - Background interval berkala setiap 60 detik.
+4. **Indikator Status:** Indikator antrean sinkronisasi live di Modal Profil pengguna.
 
-## Konsekuensi
-- **Positif:** 100% offline-ready, data tidak pernah hilang meski jaringan putus-nyambung, sync multi-device lebih andal.
-- **Negatif:** Menambah lapisan state tracking antrean sync dan skema migrasi tabel Supabase (kolom `updated_at`).
+## Hasil & Konsekuensi
+- **Positif:** 100% tahan offline (offline-resilient), bebas dari data loss akibat gangguan sinyal, bandwidth efisien dengan deduplikasi mutasi.
+

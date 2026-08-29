@@ -4,7 +4,7 @@ import { fetchCloudHabits, syncHabitToCloud, fetchCloudProfile, syncProfileToClo
 
 export function useAuthProfile(
   habits: Habit[],
-  setHabits: React.Dispatch<React.SetStateAction<Habit[]>>
+  setHabits: (habits: Habit[]) => void
 ) {
   const [userId, setUserId] = useState<string | null>(() => {
     try {

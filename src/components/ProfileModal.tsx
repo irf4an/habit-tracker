@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { UserProfile, Habit } from '../types';
 import { calculateBadges } from '../achievements';
-import { X, Trophy, Flame, CheckCircle2, Edit2, Check, Cloud } from 'lucide-react';
+import { X, Trophy, Flame, CheckCircle2, Edit2, Check, Cloud, RefreshCw } from 'lucide-react';
 import { IOSGlyphIcon } from './IOSGlyphIcon';
+import { flushOutboxQueue, getOutboxQueue } from '../cloudSync';
 import confetti from 'canvas-confetti';
 
 interface ProfileModalProps {
@@ -179,21 +180,40 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => { onClose(); onOpenAuth(); }}
-              aria-label={userEmail ? `Cloud aktif ${userEmail}, kelola akun` : 'Sambungkan Cloud Sync'}
-              className={`w-full text-left p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${userEmail ? 'bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/50' : 'bg-indigo-500/10 border-indigo-500/30 hover:border-indigo-500/50'}`}
-            >
-              <span className="flex items-center gap-2.5">
-                <span className={`w-8 h-8 rounded-xl flex items-center justify-center ${userEmail ? 'bg-emerald-500 text-white' : 'bg-indigo-600 text-white'}`}><Cloud className="w-4 h-4" aria-hidden /></span>
-                <span>
-                  <span className={`font-bold text-xs block ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{userEmail ? 'Cloud Sync Aktif' : 'Sambungkan Cloud Sync'}</span>
-                  <span className={`text-[10.5px] ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>{userEmail ? userEmail : 'Sinkronkan data ke HP & laptop lain'}</span>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => { onClose(); onOpenAuth(); }}
+                aria-label={userEmail ? `Cloud aktif ${userEmail}, kelola akun` : 'Sambungkan Cloud Sync'}
+                className={`w-full text-left p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${userEmail ? 'bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/50' : 'bg-indigo-500/10 border-indigo-500/30 hover:border-indigo-500/50'}`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <span className={`w-8 h-8 rounded-xl flex items-center justify-center ${userEmail ? 'bg-emerald-500 text-white' : 'bg-indigo-600 text-white'}`}><Cloud className="w-4 h-4" aria-hidden /></span>
+                  <span>
+                    <span className={`font-bold text-xs block ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{userEmail ? 'Cloud Sync Aktif' : 'Sambungkan Cloud Sync'}</span>
+                    <span className={`text-[10.5px] ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>{userEmail ? userEmail : 'Sinkronkan data ke HP & laptop lain'}</span>
+                  </span>
                 </span>
-              </span>
-              <span className={`text-[11px] font-bold ${userEmail ? 'text-emerald-500' : 'text-indigo-500'}`}>{userEmail ? 'Kelola' : 'Masuk →'}</span>
-            </button>
+                <span className={`text-[11px] font-bold ${userEmail ? 'text-emerald-500' : 'text-indigo-500'}`}>{userEmail ? 'Kelola' : 'Masuk →'}</span>
+              </button>
+
+              {userEmail && (
+                <div className={`px-3 py-2 rounded-xl border flex items-center justify-between text-xs font-mono ${isDarkMode ? 'bg-[#0e0e15] border-[#1e1e28]' : 'bg-zinc-50 border-zinc-200'}`}>
+                  <span className={isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}>Status Antrean Sync:</span>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const ok = await flushOutboxQueue();
+                      if (ok) alert('Semua data berhasil disinkronkan ke Cloud!');
+                    }}
+                    className="flex items-center gap-1 font-bold text-[#8338ec] hover:underline cursor-pointer"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>{getOutboxQueue().length > 0 ? `${getOutboxQueue().length} pending (Sinkron Sekarang)` : '100% Tersinkron ✓'}</span>
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 gap-3 font-mono">
