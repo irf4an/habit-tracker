@@ -255,7 +255,11 @@ export function App() {
           <div className="space-y-2.5 mb-4">
             {/* Row 1: Time of Day Filter (Habit Stacking v1.1) + Full View Toggle */}
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-1.5 p-1 rounded-full border bg-zinc-100/80 dark:bg-[#13131b] border-zinc-200 dark:border-[#20202e]">
+              <div className={`flex items-center gap-1.5 p-1 rounded-full border shadow-inner ${
+                isDarkMode
+                  ? 'bg-[#13131b] border-[#8338ec]/30'
+                  : 'bg-zinc-100 border-zinc-300'
+              }`}>
                 {[
                   { id: 'all', label: 'Semua Waktu', icon: '⚡' },
                   { id: 'morning', label: 'Pagi', icon: '🌅' },
@@ -271,7 +275,7 @@ export function App() {
                         ? 'bg-[#8338ec] text-white shadow-sm'
                         : isDarkMode
                         ? 'text-zinc-400 hover:text-zinc-200'
-                        : 'text-zinc-600 hover:text-zinc-900'
+                        : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/60'
                     }`}
                   >
                     <span>{t.icon}</span>
@@ -306,9 +310,11 @@ export function App() {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat!)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer border inline-flex items-center gap-1.5 leading-none ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer border inline-flex items-center gap-1.5 leading-none ${
                     selectedCategory === cat
-                      ? 'bg-[#8338ec]/20 border-[#8338ec] text-[#8338ec] font-semibold shadow-xs'
+                      ? isDarkMode
+                        ? 'bg-[#8338ec]/20 border-[#8338ec] text-[#a78bfa] font-semibold shadow-xs'
+                        : 'bg-[#8338ec] border-[#8338ec] text-white font-semibold shadow-sm'
                       : isDarkMode
                       ? 'bg-[#14141c] border-[#222230] text-zinc-400 hover:text-zinc-200'
                       : 'bg-white border-zinc-300 text-zinc-600 hover:text-zinc-900 hover:border-zinc-400'
