@@ -1,21 +1,21 @@
 # 0001. Arsitektur State Management & Dekomposisi App.tsx
 
-- **Status:** Proposed
+- **Status:** Accepted (Implemented in `f1e73a0`)
 - **Tanggal:** 2026-08-27
 - **Pengambil Keputusan:** Core Team
 
 ## Konteks & Masalah
-File `src/App.tsx` saat ini bertindak sebagai *God Component* (~880 baris kode) yang mengelola 15+ state React sekaligus: data habits, modal triggers, autentikasi cloud, periodic reminder loop, theme toggle, dan keyboard shortcut listener. Hal ini menyebabkan:
-1. **Re-render Berantai (Unnecessary Re-renders):** Perubahan pada satu tanggal habit memicu re-render seluruh aplikasi beserta modal-modal yang tertutup.
-2. **Keterikatan Kuat (Tight Coupling):** Logika bisnis (streak, freeze rules, notifikasi) bercampur langsung dengan tata letak UI.
+File `src/App.tsx` sebelumnya bertindak sebagai *God Component* (~887 baris kode) yang mengelola 15+ state React sekaligus: data habits, modal triggers, autentikasi cloud, periodic reminder loop, theme toggle, dan keyboard shortcut listener.
 
 ## Keputusan Arsitektur
-Dekomposisi `App.tsx` ke dalam **Domain Custom Hooks** terisolasi:
-- `useHabits()`: Mengelola CRUD, mutasi riwayat tanggal, streak freeze, dan persistensi `localStorage`.
-- `useReminders()`: Mengelola pengecekan background interval, evaluasi quiet hours, dan snooze.
-- `useKeyboardShortcuts()`: Menangani global hotkeys (`N`, `1-9`) dengan *input guard*.
-- `useCloudSync()`: Menangani listener auth Supabase dan abstraksi sinkronisasi.
+Dekomposisi seluruh logika bisnis ke dalam **Domain Custom Hooks** di folder `src/hooks/`:
+1. `src/hooks/useHabits.ts`: Mengelola data state, CRUD habits, persistensi LocalStorage, toggle checklist, catatan refleksi, dan streak freeze.
+2. `src/hooks/useAuthProfile.ts`: Mengisolasi state autentikasi Supabase, user profile, dan auto-sync listener.
+3. `src/hooks/useReminders.ts`: Mengelola interval background checker notifikasi, evaluasi jam sunyi (*quiet hours*), dan snooze 10 menit.
+4. `src/hooks/useKeyboardShortcuts.ts`: Mengelola global hotkeys (`N`, `1-9`) dengan *input/textarea guard*.
+5. `src/hooks/useTheme.ts`: Mengelola theme dark/light mode dan animasi View Transition circle reveal.
 
-## Konsekuensi
-- **Positif:** Ukuran `App.tsx` berkurang menjadi < 200 baris, re-render lebih hemat, logic mudah di-unit test secara terpisah.
-- **Negatif:** Diperlukan refactor passing props atau penggunaan React Context sederhana untuk state sharing.
+## Hasil
+- Ukuran file `App.tsx` berhasil dipangkas **>55%** dari **887 baris ➔ 395 baris**.
+- Komponen murni fokus pada tata letak tampilan (*Presentation Layer*), sementara *Business Logic* terisolasi rapi dan mudah di-test.
+

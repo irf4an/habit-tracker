@@ -1,30 +1,24 @@
-import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { flushSync } from 'react-dom';
-import { Habit, ViewTab } from './types';
+import React, { useState, useRef, lazy, Suspense, useCallback } from 'react';
+import { Habit, ViewTab, QuietHours } from './types';
 import { HabitCard } from './components/HabitCard';
 import { StatsView } from './components/StatsView';
 import { ManageView } from './components/ManageView';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { PomodoroSession } from './components/PomodoroTimer';
 import { calculateBadges } from './achievements';
-import { sendHabitNotification, isInQuietHours } from './notification';
-import { playCheckSound, playCelebrationSound } from './sound';
-import { UserProfile, QuietHours } from './types';
-import { getTodayString, formatDate, canFreezeOnDate } from './utils';
-import { supabase, isSupabaseConfigured } from './supabase';
-import {
-  fetchCloudHabits,
-  syncHabitToCloud,
-  deleteHabitFromCloud,
-  fetchCloudProfile,
-  syncProfileToCloud,
-} from './cloudSync';
-import { HelpCircle, Sparkles, Sun, Moon, User } from 'lucide-react';
+import { getTodayString } from './utils';
+import { HelpCircle, Sun, Moon } from 'lucide-react';
 import { MaterialIcon } from './components/MaterialIcon';
 import { FluentOutlineIcon } from './components/FluentOutlineIcon';
-import confetti from 'canvas-confetti';
 
-// Lazy Loaded Modals for Instant Initial Load & Code-Splitting (ADR-0002)
+// Custom Hooks (ADR-0001: State Decomposition)
+import { useHabits } from './hooks/useHabits';
+import { useAuthProfile } from './hooks/useAuthProfile';
+import { useReminders } from './hooks/useReminders';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useTheme } from './hooks/useTheme';
+
+// Lazy Loaded Modals for Code-Splitting (ADR-0002)
 const HabitModal = lazy(() => import('./components/HabitModal').then((m) => ({ default: m.HabitModal })));
 const ShareCardModal = lazy(() => import('./components/ShareCardModal').then((m) => ({ default: m.ShareCardModal })));
 const OnboardingModal = lazy(() => import('./components/OnboardingModal').then((m) => ({ default: m.OnboardingModal })));
@@ -34,171 +28,26 @@ const ProfileModal = lazy(() => import('./components/ProfileModal').then((m) => 
 const AuthModal = lazy(() => import('./components/AuthModal').then((m) => ({ default: m.AuthModal })));
 const HelpModal = lazy(() => import('./components/HelpModal').then((m) => ({ default: m.HelpModal })));
 
-const STORAGE_KEY = 'minimal_habit_tracker_data_v2';
-
-// Clean initial state for new public users: start fresh (empty)
-const generateDemoHabits = (): Habit[] => {
-  return [];
-};
-
 export function App() {
-  const [habits, setHabits] = useState<Habit[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        return JSON.parse(saved);
-      }
-      // Migrate v1 data if present
-      const v1 = localStorage.getItem('minimal_habit_tracker_data_v1');
-      if (v1) {
-        return JSON.parse(v1);
-      }
-    } catch (e) {
-      console.error('Failed to load from localStorage', e);
-    }
-    return generateDemoHabits();
-  });
-
   const [activeTab, setActiveTab] = useState<ViewTab>('calendar');
   const [isFullView, setIsFullView] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
-      return window.innerWidth >= 768; // Default false (compact fit) on mobile screens!
+      return window.innerWidth >= 768;
     }
     return true;
   });
-  const [showHelp, setShowHelp] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+
+  // Modal Visibility States
+  const [showHelp, setShowHelp] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [shareHabit, setShareHabit] = useState<Habit | null>(null);
   const [showAchievements, setShowAchievements] = useState<boolean>(false);
   const [showProfile, setShowProfile] = useState<boolean>(false);
   const [showAuth, setShowAuth] = useState<boolean>(false);
-  const [userId, setUserId] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem('minimal_habit_auth_user_id');
-    } catch {
-      return null;
-    }
-  });
-  const [userEmail, setUserEmail] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem('minimal_habit_auth_email');
-    } catch {
-      return null;
-    }
-  });
   const [pomodoroSession, setPomodoroSession] = useState<PomodoroSession | null>(null);
-  const [quietHours, setQuietHours] = useState<QuietHours>(() => {
-    try {
-      const raw = localStorage.getItem('minimal_habit_quiet_hours_v1');
-      if (raw) return JSON.parse(raw);
-    } catch {}
-    return { enabled: false, start: '22:00', end: '07:00' };
-  });
-  useEffect(() => {
-    try { localStorage.setItem('minimal_habit_quiet_hours_v1', JSON.stringify(quietHours)); } catch {}
-  }, [quietHours]);
 
-  const [userProfile, setUserProfile] = useState<UserProfile>(() => {
-    try {
-      const saved = localStorage.getItem('minimal_habit_profile_v1');
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // default
-    }
-    const today = new Date();
-    const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-    return {
-      name: 'Pengguna',
-      bio: '1% lebih baik setiap hari 🚀',
-      avatarEmoji: '⚡',
-      joinedDate: `${monthNames[today.getMonth()]} ${today.getFullYear()}`,
-    };
-  });
-
-  const handleAuthSuccess = async (user: { id: string; email: string }) => {
-    setUserId(user.id);
-    setUserEmail(user.email);
-    try {
-      localStorage.setItem('minimal_habit_auth_user_id', user.id);
-      localStorage.setItem('minimal_habit_auth_email', user.email);
-
-      // Load cloud data on login
-      const cloudHabits = await fetchCloudHabits(user.id);
-      if (cloudHabits && cloudHabits.length > 0) {
-        setHabits(cloudHabits);
-      } else {
-        // Upload current local habits to cloud
-        habits.forEach((h) => syncHabitToCloud(user.id, h));
-      }
-
-      const cloudProfile = await fetchCloudProfile(user.id);
-      if (cloudProfile) {
-        setUserProfile(cloudProfile);
-      } else {
-        syncProfileToCloud(user.id, userProfile);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleSignOut = () => {
-    setUserId(null);
-    setUserEmail(null);
-    try {
-      localStorage.removeItem('minimal_habit_auth_user_id');
-      localStorage.removeItem('minimal_habit_auth_email');
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleSaveProfile = (updated: UserProfile) => {
-    setUserProfile(updated);
-    if (userId) {
-      syncProfileToCloud(userId, updated);
-    }
-    try {
-      localStorage.setItem('minimal_habit_profile_v1', JSON.stringify(updated));
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('minimal_habit_theme_v1');
-      if (saved) return saved === 'dark';
-    } catch {
-      // default dark
-    }
-    return true;
-  });
-
-  const toggleTheme = (e?: React.MouseEvent<HTMLButtonElement>) => {
-    const nextDark = !isDarkMode;
-    const x = e ? e.clientX : window.innerWidth - 24;
-    const y = e ? e.clientY : 32;
-    const apply = () => flushSync(() => {
-      setIsDarkMode(nextDark);
-      try { localStorage.setItem('minimal_habit_theme_v1', nextDark ? 'dark' : 'light'); } catch {}
-    });
-    const doc = document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void> } };
-    if (!doc.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      apply();
-      return;
-    }
-    const t = doc.startViewTransition(apply);
-    t.ready.then(() => {
-      const maxR = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
-      document.documentElement.animate(
-        { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${maxR}px at ${x}px ${y}px)`] },
-        { duration: 420, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', pseudoElement: '::view-transition-new(root)' }
-      );
-    });
-  };
   const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
     try {
       return !localStorage.getItem('minimal_habit_onboarded_v1');
@@ -207,8 +56,58 @@ export function App() {
     }
   });
 
+  const [quietHours, setQuietHours] = useState<QuietHours>(() => {
+    try {
+      const raw = localStorage.getItem('minimal_habit_quiet_hours_v1');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return { enabled: false, start: '22:00', end: '07:00' };
+  });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Hook 1: Theme Management
+  const { isDarkMode, toggleTheme } = useTheme();
+
+  // Hook 2: Habit Data & Operations
+  const {
+    habits,
+    setHabits,
+    handleToggleDate,
+    handleSaveNote,
+    handleToggleFreeze,
+    handleSaveHabit,
+    handleDeleteHabit,
+    handleToggleArchive,
+    handlePomodoroComplete,
+    handleResetSample,
+  } = useHabits(null);
+
+  // Hook 3: User Profile & Cloud Auth
+  const {
+    userId,
+    userEmail,
+    userProfile,
+    handleAuthSuccess,
+    handleSignOut,
+    handleSaveProfile,
+  } = useAuthProfile(habits, setHabits);
+
+  // Hook 4: Daily Reminders & Quiet Hours
+  useReminders(habits, setHabits, quietHours);
+
+  // Hook 5: Global Keyboard Shortcuts (N, 1-9)
+  useKeyboardShortcuts({
+    habits,
+    onOpenNewHabit: useCallback(() => {
+      setEditingHabit(null);
+      setIsModalOpen(true);
+    }, []),
+    onToggleDate: handleToggleDate,
+  });
+
+  // Pomodoro Actions
   const handleStartPomodoro = (habit: Habit) => {
-    // Close other modals first to avoid backdrop stacking (blank hitam)
     setIsModalOpen(false);
     setShowProfile(false);
     setShowAuth(false);
@@ -222,31 +121,6 @@ export function App() {
     });
   };
 
-  const handlePomodoroComplete = (habitId: string, minutesCompleted: number) => {
-    const today = getTodayString();
-    setHabits((prev) =>
-      prev.map((h) => {
-        if (h.id !== habitId) return h;
-        const currentVal = h.history[today] || 0;
-        const newHistory = { ...h.history };
-
-        if (h.type === 'numeric') {
-          // Add logged minutes or target
-          const target = h.targetValue || 1;
-          const nextVal = currentVal > 0 ? currentVal + minutesCompleted : Math.max(target, minutesCompleted);
-          newHistory[today] = nextVal;
-        } else {
-          newHistory[today] = 1;
-        }
-
-        return {
-          ...h,
-          history: newHistory,
-        };
-      })
-    );
-  };
-
   const handleCloseOnboarding = () => {
     setShowOnboarding(false);
     try {
@@ -256,248 +130,7 @@ export function App() {
     }
   };
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Save to local storage on change
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(habits));
-    } catch (e) {
-      console.error('Failed to save to localStorage', e);
-    }
-  }, [habits]);
-
-  // Periodic Reminder Checker — snooze + quiet hours + de-dupe per day
-  useEffect(() => {
-    const checkReminders = () => {
-      const now = new Date();
-      const currentHours = String(now.getHours()).padStart(2, '0');
-      const currentMins = String(now.getMinutes()).padStart(2, '0');
-      const currentTimeStr = `${currentHours}:${currentMins}`;
-      const todayStr = getTodayString();
-      const nowMs = Date.now();
-
-      if (quietHours.enabled && isInQuietHours(quietHours.start, quietHours.end, now)) return;
-
-      habits.forEach((habit) => {
-        if (!habit.reminderEnabled || habit.archived) return;
-        // Snoozed?
-        if (habit.snoozedUntil && nowMs < habit.snoozedUntil) return;
-        // Only fire once per day per habit, unless snoozed
-        const isTime = habit.reminderTime === currentTimeStr;
-        if (!isTime) return;
-        if (habit.lastNotifiedDate === todayStr) return;
-        const isDone = (habit.history[todayStr] || 0) >= (habit.targetValue || 1);
-        if (isDone) return;
-        // Snooze handler via notification: we attach timeout to re-notify
-        const snoozeMs = 10 * 60 * 1000;
-        const notif = sendHabitNotification(
-          `Waktunya ${habit.name}!`,
-          `Tap untuk buka — snooze 10 menit jika belum sempat.`,
-          habit.emoji
-        );
-        // If user focuses app quickly, count as seen; otherwise snooze auto on next tick
-        if (notif) {
-          notif.onclose = () => {};
-        }
-        // Mark notified, and schedule snooze window: clear snooze after 10m to allow re-fire once
-        setHabits((prev) =>
-          prev.map((h) =>
-            h.id === habit.id
-              ? { ...h, lastNotifiedDate: todayStr, snoozedUntil: nowMs + snoozeMs }
-              : h
-          )
-        );
-        // Clear snooze after window so a second daily reminder doesn't spam
-        setTimeout(() => {
-          setHabits((prev) => prev.map((h) => (h.id === habit.id ? { ...h, snoozedUntil: undefined } : h)));
-        }, snoozeMs + 1000);
-      });
-    };
-    checkReminders();
-    const interval = setInterval(checkReminders, 30000);
-    return () => clearInterval(interval);
-  }, [habits, quietHours]);
-
-  // Global Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
-        return;
-      }
-
-      if (e.key.toLowerCase() === 'n') {
-        e.preventDefault();
-        setEditingHabit(null);
-        setIsModalOpen(true);
-      }
-
-      // Keys 1 to 9 toggle today's check for habit index
-      const num = parseInt(e.key, 10);
-      const activeList = habits.filter((h) => !h.archived);
-      if (!isNaN(num) && num >= 1 && num <= activeList.length) {
-        const targetHabit = activeList[num - 1];
-        if (targetHabit) {
-          const today = getTodayString();
-          const curVal = targetHabit.history[today] || 0;
-          const targetGoal = targetHabit.targetValue || 1;
-          const nextVal = curVal >= targetGoal ? 0 : targetGoal;
-          handleToggleDate(targetHabit.id, today, nextVal);
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [habits]);
-
-  // Toggle or set habit check value for a specific date
-  const handleToggleDate = (habitId: string, dateStr: string, value?: number) => {
-    setHabits((prev) =>
-      prev.map((h) => {
-        if (h.id !== habitId) return h;
-        const currentVal = h.history[dateStr] || 0;
-        const targetGoal = h.targetValue || 1;
-        const nextVal = value !== undefined ? value : (currentVal >= targetGoal ? 0 : targetGoal);
-        
-        const newHistory = { ...h.history };
-        if (nextVal > 0) {
-          newHistory[dateStr] = nextVal;
-        } else {
-          delete newHistory[dateStr];
-        }
-        const updatedHabit = {
-          ...h,
-          history: newHistory,
-        };
-
-        // Sync to cloud if user is logged in
-        if (userId) {
-          syncHabitToCloud(userId, updatedHabit);
-        }
-
-        return updatedHabit;
-      })
-    );
-  };
-
-  // Save daily reflection note
-  const handleSaveNote = (habitId: string, dateStr: string, note: string) => {
-    setHabits((prev) =>
-      prev.map((h) => {
-        if (h.id !== habitId) return h;
-        const newNotes = { ...(h.notes || {}) };
-        if (note.trim()) {
-          newNotes[dateStr] = note.trim();
-        } else {
-          delete newNotes[dateStr];
-        }
-        return {
-          ...h,
-          notes: newNotes,
-        };
-      })
-    );
-  };
-
-  // Toggle Streak Freeze — enforce 2x per 7 days
-  const handleToggleFreeze = (habitId: string, dateStr: string) => {
-    setHabits((prev) =>
-      prev.map((h) => {
-        if (h.id !== habitId) return h;
-        const currentFrozen = h.frozenDates || [];
-        const isFrozen = currentFrozen.includes(dateStr);
-        if (!isFrozen && !canFreezeOnDate(currentFrozen, dateStr)) return h;
-        let nextFrozen: string[];
-        if (isFrozen) {
-          nextFrozen = currentFrozen.filter((d) => d !== dateStr);
-        } else {
-          nextFrozen = [...currentFrozen, dateStr];
-          confetti({
-            particleCount: 35,
-            spread: 50,
-            origin: { y: 0.7 },
-            colors: ['#0284c7', '#38bdf8', '#ffffff'],
-          });
-        }
-
-        return {
-          ...h,
-          frozenDates: nextFrozen,
-        };
-      })
-    );
-  };
-
-  // Add / Edit habit
-  const handleSaveHabit = (data: Partial<Habit>) => {
-    if (data.id) {
-      // Edit existing
-      setHabits((prev) =>
-        prev.map((h) => {
-          if (h.id !== data.id) return h;
-          const updated = { ...h, ...data };
-          if (userId) syncHabitToCloud(userId, updated);
-          return updated;
-        })
-      );
-    } else {
-      // Create new
-      const newHabit: Habit = {
-        id: `habit-${Date.now()}`,
-        name: data.name || 'New Habit',
-        emoji: data.emoji || '🎯',
-        color: data.color || '#3b82f6',
-        category: data.category || 'Fitness',
-        type: data.type || 'boolean',
-        targetValue: data.targetValue || 1,
-        unit: data.unit,
-        frequency: data.frequency || 'everyday',
-        weeklyTargetDays: data.weeklyTargetDays,
-        createdAt: getTodayString(),
-        history: {},
-        notes: {},
-        archived: false,
-      };
-      setHabits((prev) => [...prev, newHabit]);
-
-      if (userId) {
-        syncHabitToCloud(userId, newHabit);
-      }
-
-      confetti({
-        particleCount: 50,
-        spread: 70,
-        origin: { y: 0.6 },
-      });
-    }
-  };
-
-  // Delete habit
-  const handleDeleteHabit = (habitId: string) => {
-    if (window.confirm('Are you sure you want to delete this habit?')) {
-      setHabits((prev) => prev.filter((h) => h.id !== habitId));
-      if (userId) {
-        deleteHabitFromCloud(userId, habitId);
-      }
-    }
-  };
-
-  // Toggle archive status
-  const handleToggleArchive = (habitId: string) => {
-    setHabits((prev) =>
-      prev.map((h) => (h.id === habitId ? { ...h, archived: !h.archived } : h))
-    );
-  };
-
-  // Open edit modal
-  const handleOpenEdit = (habit: Habit) => {
-    setEditingHabit(habit);
-    setIsModalOpen(true);
-  };
-
-  // Export JSON
+  // Import / Export Helpers
   const handleExport = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(habits, null, 2));
     const downloadAnchor = document.createElement('a');
@@ -508,7 +141,6 @@ export function App() {
     downloadAnchor.remove();
   };
 
-  // Import JSON
   const handleImportClick = () => {
     fileInputRef.current?.click();
   };
@@ -516,69 +148,25 @@ export function App() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
         const parsed = JSON.parse(event.target?.result as string);
         if (Array.isArray(parsed)) {
           setHabits(parsed);
-          alert('Habits data successfully imported!');
+          alert('Data habits berhasil diimpor!');
         } else {
-          alert('Invalid habit data format in JSON file.');
+          alert('Format file JSON tidak valid.');
         }
-      } catch (err) {
-        alert('Failed to parse JSON file.');
+      } catch {
+        alert('Gagal membaca file JSON.');
       }
     };
     reader.readAsText(file);
     e.target.value = '';
   };
 
-  const handleResetSample = () => {
-    if (window.confirm('Muat contoh kebiasaan demo?')) {
-      const today = new Date();
-      const gymHistory: Record<string, number> = {};
-      const readingHistory: Record<string, number> = {};
-      for (let i = 0; i < 60; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
-        const dateStr = formatDate(d);
-        if (i < 3 || i % 2 === 0) gymHistory[dateStr] = 1;
-        if (i % 3 === 0) readingHistory[dateStr] = 20;
-      }
-      setHabits([
-        {
-          id: 'demo-1',
-          name: 'Olahraga Pagi',
-          emoji: '💪',
-          color: '#3b82f6',
-          category: 'Fitness',
-          type: 'boolean',
-          frequency: 'everyday',
-          createdAt: formatDate(today),
-          history: gymHistory,
-          notes: {},
-        },
-        {
-          id: 'demo-2',
-          name: 'Baca Buku',
-          emoji: '📚',
-          color: '#eab308',
-          category: 'Learning',
-          type: 'numeric',
-          targetValue: 20,
-          unit: 'halaman',
-          frequency: 'everyday',
-          createdAt: formatDate(today),
-          history: readingHistory,
-          notes: {},
-        },
-      ]);
-    }
-  };
-
-  // Filter habits for calendar view
+  // Derived Values
   const categories = ['All', ...Array.from(new Set(habits.map((h) => h.category).filter(Boolean)))];
   const activeHabits = habits.filter((h) => !h.archived);
   const { unlockedCount, totalCount, level } = calculateBadges(habits);
@@ -591,6 +179,8 @@ export function App() {
     <div className={`min-h-[100dvh] flex flex-col transition-colors duration-200 ${isDarkMode ? 'bg-[#0b0b0e] text-zinc-100 selection:bg-indigo-600 selection:text-white' : 'bg-[#fbfbfe] text-zinc-900 selection:bg-indigo-500 selection:text-white'}`}>
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-[#8338ec] text-white px-3 py-1.5 rounded-lg text-sm z-[100]">Lompat ke konten</a>
       <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" aria-hidden />
+
+      {/* App Header */}
       <header className={`sticky top-0 z-40 w-full backdrop-blur-md border-b transition-colors ${isDarkMode ? 'bg-[#0b0b0e]/90 border-[#1c1c26]' : 'bg-[#fbfbfe]/90 border-zinc-200'}`}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -618,6 +208,8 @@ export function App() {
               </span>
             </button>
           </div>
+
+          {/* Desktop Nav */}
           <nav aria-label="Navigasi utama" className={`hidden sm:flex items-center p-1 rounded-full border shadow-inner ${isDarkMode ? 'bg-[#14141d] border-[#8338ec]/35' : 'bg-zinc-100 border-[#8338ec]/25'}`} style={{ boxShadow: `0 0 16px rgba(131,56,236,0.12)` }}>
             <button type="button" aria-current={activeTab === 'calendar' ? 'page' : undefined} onClick={() => setActiveTab('calendar')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${activeTab === 'calendar' ? 'bg-white text-zinc-950 font-semibold shadow-md' : isDarkMode ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-500 hover:text-zinc-900'}`}>
               <MaterialIcon name="calendar_month" size={16} />
@@ -632,6 +224,7 @@ export function App() {
               Manage
             </button>
           </nav>
+
           <div className="flex items-center gap-2">
             <button type="button" aria-label={isDarkMode ? 'Ganti ke mode terang' : 'Ganti ke mode gelap'} onClick={toggleTheme} title={isDarkMode ? 'Switch to Light mode' : 'Switch to Dark mode'} className={`p-2 rounded-full border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#161620] hover:bg-[#20202c] text-amber-300 border-[#282838]' : 'bg-white hover:bg-zinc-100 text-indigo-600 border-zinc-300 shadow-sm'}`}>
               {isDarkMode ? <Sun className="w-4 h-4" aria-hidden /> : <Moon className="w-4 h-4" aria-hidden />}
@@ -643,11 +236,12 @@ export function App() {
         </div>
       </header>
 
+      {/* Main Container */}
       <main id="main-content" tabIndex={-1} className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 pb-24 sm:pb-10 outline-none">
         {/* Category Filter & Full View Toggle Bar */}
         {activeTab === 'calendar' && (
           <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
-            {/* Category Filter Pills — Material Icons clean inline SVG */}
+            {/* Category Filter Pills */}
             <div className="flex items-center gap-1.5 flex-wrap">
               {categories.map((cat) => (
                 <button
@@ -745,7 +339,10 @@ export function App() {
               setEditingHabit(null);
               setIsModalOpen(true);
             }}
-            onEditHabit={handleOpenEdit}
+            onEditHabit={(habit) => {
+              setEditingHabit(habit);
+              setIsModalOpen(true);
+            }}
             onDeleteHabit={handleDeleteHabit}
             onToggleArchive={handleToggleArchive}
             onReorderHabits={setHabits}
@@ -783,7 +380,7 @@ export function App() {
         isDarkMode={isDarkMode}
       />
 
-      {/* Pomodoro Timer Modal & Floating Widget */}
+      {/* Modals with Lazy Suspense */}
       <Suspense fallback={null}>
         <PomodoroTimer
           session={pomodoroSession}
@@ -793,7 +390,6 @@ export function App() {
         />
       </Suspense>
 
-      {/* Habit Create / Edit Modal */}
       <Suspense fallback={null}>
         {isModalOpen && (
           <HabitModal
@@ -806,14 +402,12 @@ export function App() {
         )}
       </Suspense>
 
-      {/* Share Card Modal */}
       <Suspense fallback={null}>
         {shareHabit && (
           <ShareCardModal habit={shareHabit} onClose={() => setShareHabit(null)} isDarkMode={isDarkMode} />
         )}
       </Suspense>
 
-      {/* Help / Shortcuts Modal */}
       <Suspense fallback={null}>
         {showHelp && (
           <HelpModal
@@ -824,7 +418,6 @@ export function App() {
         )}
       </Suspense>
 
-      {/* Profile Modal */}
       <Suspense fallback={null}>
         {showProfile && (
           <ProfileModal
@@ -840,7 +433,6 @@ export function App() {
         )}
       </Suspense>
 
-      {/* Auth / Cloud Sync Modal */}
       <Suspense fallback={null}>
         {showAuth && (
           <AuthModal
@@ -854,7 +446,6 @@ export function App() {
         )}
       </Suspense>
 
-      {/* Achievements Modal */}
       <Suspense fallback={null}>
         {showAchievements && (
           <AchievementsModal
@@ -866,7 +457,6 @@ export function App() {
         )}
       </Suspense>
 
-      {/* Interactive Onboarding Tour */}
       <Suspense fallback={null}>
         {showOnboarding && (
           <OnboardingModal
