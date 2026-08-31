@@ -1,8 +1,10 @@
-export type HabitType = 'boolean' | 'numeric';
+export type HabitType = 'boolean' | 'numeric' | 'negative';
 
 export type FrequencyType = 'everyday' | 'weekdays' | 'weekends' | 'weekly_target';
 
 export type TimeOfDay = 'anytime' | 'morning' | 'afternoon' | 'evening';
+
+export type DailyMood = 'happy' | 'energetic' | 'focused' | 'tired' | 'stressed';
 
 export interface Habit {
   id: string;
@@ -12,6 +14,7 @@ export interface Habit {
   createdAt: string; // YYYY-MM-DD
   history: Record<string, number>; // date "YYYY-MM-DD" -> value (1 for boolean complete, or numeric count like 5)
   notes?: Record<string, string>; // date "YYYY-MM-DD" -> optional reflection/note
+  moods?: Record<string, DailyMood>; // date "YYYY-MM-DD" -> optional daily mood
   
   // Advanced features
   type?: HabitType; // 'boolean' | 'numeric'

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { UserProfile, Habit } from '../types';
-import { calculateBadges } from '../achievements';
+import { useAchievements } from '../hooks/useAchievements';
 import { X, Trophy, Flame, CheckCircle2, Edit2, Check, Cloud, RefreshCw } from 'lucide-react';
 import { IOSGlyphIcon } from './IOSGlyphIcon';
 import { flushOutboxQueue, getOutboxQueue } from '../cloudSync';
@@ -40,9 +40,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     window.addEventListener('keydown', onEsc);
     return () => window.removeEventListener('keydown', onEsc);
   }, [isOpen, onClose]);
-  if (!isOpen) return null;
 
-  const { level, levelTitle, totalXp, unlockedCount, totalCount } = calculateBadges(habits);
+  const { level, levelTitle, totalXp, unlockedCount, totalCount } = useAchievements(habits);
+
+  if (!isOpen) return null;
 
   const totalCompletions = habits.reduce(
     (acc, h) => acc + Object.keys(h.history).filter((k) => h.history[k] > 0).length,
@@ -53,8 +54,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     e.preventDefault();
     onSaveProfile({
       ...profile,
-      name: name.trim() || 'Champion',
-      bio: bio.trim() || 'Building daily momentum 🚀',
+      name: name.trim() || 'Pengguna',
+      bio: bio.trim() || 'Konsisten 1% setiap hari',
       avatarEmoji,
     });
     setIsEditing(false);
@@ -229,6 +230,32 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               }`}>
                 <span className={`text-[10.5px] uppercase ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>Habit Aktif</span>
                 <div className={`text-2xl font-bold font-sans mt-0.5 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{habits.length}</div>
+              </div>
+            </div>
+
+            {/* Support / Tip Jar */}
+            <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-[#0f0f15] border-[#1e1e28]' : 'bg-zinc-50 border-zinc-200'}`}>
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#0EC9A0]/15 border border-[#0EC9A0]/25 flex items-center justify-center text-[#0EC9A0] shrink-0">
+                  <span className="text-sm">♡</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Dukung Habit Tracker</h4>
+                  <p className={`text-xs mt-1 leading-relaxed ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                    Gratis selamanya, tanpa iklan. Jika app ini membantu rutinitasmu, traktir kopi untuk biaya domain & server.
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <a href="https://saweria.co/" target="_blank" rel="noopener noreferrer" className="px-3.5 py-1.5 bg-[#0EC9A0] hover:bg-[#0ab890] text-white rounded-full text-xs font-bold transition-colors inline-flex items-center gap-1.5">
+                      <span>Saweria</span>
+                    </a>
+                    <a href="https://trakteer.id/" target="_blank" rel="noopener noreferrer" className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition-colors inline-flex items-center gap-1.5 ${isDarkMode ? 'bg-white/5 hover:bg-white/10 text-white border-white/10' : 'bg-white hover:bg-zinc-50 text-zinc-700 border-zinc-200'}`}>
+                      Trakteer
+                    </a>
+                    <a href="https://github.com/irf4an/habit-tracker" target="_blank" rel="noopener noreferrer" className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-colors inline-flex items-center gap-1.5 ${isDarkMode ? 'text-zinc-400 hover:text-white border-zinc-700 hover:border-zinc-600' : 'text-zinc-600 hover:text-zinc-900 border-zinc-300 hover:border-zinc-400'}`}>
+                      <span>GitHub</span>
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -132,12 +132,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         )}
 
         {step === 4 && (
-          <div className="space-y-4 animate-in fade-in text-center py-1">
+          <div className="space-y-4 animate-in fade-in text-center py-2">
             <div>
               <h3 className={`text-xl font-extrabold tracking-tight ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Mulai dari satu kebiasaan kecil</h3>
-              <p className={`text-sm leading-relaxed mt-2 max-w-sm mx-auto ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Data tersimpan di perangkatmu. Kalau login, otomatis sinkron ke HP/laptop lain.</p>
+              <p className={`text-sm leading-relaxed mt-2 max-w-sm mx-auto ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Data tersimpan di perangkatmu. Jika masuk akun, otomatis tersinkronkan ke perangkat lain.</p>
             </div>
-            <div className={`p-3 rounded-2xl border text-sm ${isDarkMode ? 'bg-[#0c0c12] border-[#20202e] text-zinc-400' : 'bg-zinc-50 border-zinc-200 text-zinc-600'}`}>Saran: pilih yang paling gampang dulu — mis. “Minum air 8 gelas”.</div>
+            <div className={`p-3 rounded-2xl border text-xs sm:text-sm font-medium ${isDarkMode ? 'bg-[#0c0c12] border-[#20202e] text-zinc-300' : 'bg-zinc-50 border-zinc-200 text-zinc-700'}`}>Saran: pilih target yang paling mudah dijaga terlebih dahulu.</div>
           </div>
         )}
 

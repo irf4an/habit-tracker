@@ -66,7 +66,7 @@ export function useReminders(
           if (remaining.length > 0) {
             sendHabitNotification(
               `Evaluasi Malam: ${remaining.length} Kebiasaan Tersisa`,
-              `Yuk selesaikan ${remaining.map((h) => h.name).slice(0, 3).join(', ')}${remaining.length > 3 ? '...' : ''} sebelum tidur agar streak tetap aman! 🔥`,
+              `Yuk selesaikan ${remaining.map((h) => h.name).slice(0, 3).join(', ')}${remaining.length > 3 ? '...' : ''} sebelum tidur agar streak tetap aman.`,
               '🌙'
             );
             localStorage.setItem(EVENING_RECAP_KEY, todayStr);

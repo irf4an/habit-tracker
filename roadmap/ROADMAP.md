@@ -21,24 +21,26 @@ Dokumen ini memetakan tahapan rilis fitur berdasarkan prioritas psikologi kebias
 ### 🚀 Versi 1.2 — Reflection & Retensi Data
 **Fokus:** Mengangkat nilai catatan harian agar tidak terkubur di dalam grid.
 
-- [ ] **Timeline Jurnal / Reflection Feed**
-  - Tab atau sub-view kronologis yang menampilkan riwayat catatan harian (*daily reflections*).
-  - Filter catatan berdasarkan habit dan pencarian teks.
-  - Export jurnal terpisah ke format Markdown/PDF.
-- [ ] **Streak Protection Notification Enhancement**
-  - Notifikasi darurat pintar pukul 21:00 jika ada kebiasaan yang streak-nya aktif tapi belum dicentang.
+- [x] **Timeline Jurnal / Reflection Feed**
+  - Modal kronologis yang mengumpulkan seluruh catatan refleksi harian dari semua kebiasaan.
+  - Filter catatan berdasarkan habit dan pencarian teks / tanggal.
+  - Fitur edit dan hapus catatan langsung dari timeline feed.
+- [x] **Streak Protection Notification Enhancement**
+  - Evaluasi malam otomatis pukul 21:00 yang mengingatkan kebiasaan yang belum dicentang.
 
 ---
 
 ### 🚀 Versi 2.0 — Deep Insights & Anti-Habits
 **Fokus:** Fitur analitik prediktif dan variasi jenis kebiasaan baru.
 
-- [ ] **Negative Habits / Anti-Habit Mode**
-  - Format kebiasaan "Menahan Diri / Berhenti" (contoh: *No Sugar*, *Stop Merokok*, *Screen Time < 2 Jam*).
-  - Otomatis dianggap sukses tiap hari kecuali user log "Relapse".
-  - Counter hari bersih (*clean streak*) dan kalkulator penghematan (waktu/uang).
-- [ ] **Weekly Review & Automated Digest**
-  - Popup review otomatis tiap hari Senin pagi.
-  - Skor konsistensi mingguan + analisis korelasi (contoh: *"Kamu 2x lebih konsisten saat memulai hari sebelum jam 8"*).
-- [ ] **Widget iOS / Android (PWA Shortcuts)**
-  - Pintasan cepat check-in hari ini langsung dari home screen.
+- [x] **Negative Habits / Anti-Habit Mode**
+  - Tipe kebiasaan "Menahan Diri / Berhenti" (misal: *No Sugar*, *Stop Merokok*, *Screen Time < 2 Jam*).
+  - Otomatis dianggap sukses/bersih tiap hari dari tanggal mulai, user hanya mencatat jika mengalami *Relapse*.
+  - Counter hari bersih (*Clean Days Streak*) dan tampilan heatmap otomatis hijau (bersih) / merah (kambuh).
+- [x] **Weekly Review & Automated Digest**
+  - Banner rekap pekan lalu di tab Statistik (Senin s/d Minggu ISO).
+  - Skor konsistensi pekan lalu, tren delta % dibanding pekan sebelumnya, kebiasaan bintang pekan, dan kebiasaan yang butuh perhatian.
+  - Modal detail rekap mingguan terpisah (lazy-loaded).
+- [x] **PWA Polish & iOS Safari Add-to-Homescreen Guide**
+  - Banner install prompt untuk iOS Safari dan Android (`IOSInstallPrompt` + `beforeinstallprompt`).
+  - Icon website diperbarui ke grid checklist teal `#0EC9A0`.

@@ -11,12 +11,13 @@ import { HelpCircle, Sun, Moon } from 'lucide-react';
 import { MaterialIcon } from './components/MaterialIcon';
 import { FluentOutlineIcon } from './components/FluentOutlineIcon';
 
-// Custom Hooks (ADR-0001: State Decomposition)
+// Custom Hooks (ADR-0001 & ADR-0004: State Decomposition & Memoized Analytics)
 import { useHabits } from './hooks/useHabits';
 import { useAuthProfile } from './hooks/useAuthProfile';
 import { useReminders } from './hooks/useReminders';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useTheme } from './hooks/useTheme';
+import { useAchievements } from './hooks/useAchievements';
 
 // Lazy Loaded Modals for Code-Splitting (ADR-0002)
 const HabitModal = lazy(() => import('./components/HabitModal').then((m) => ({ default: m.HabitModal })));
@@ -27,6 +28,8 @@ const AchievementsModal = lazy(() => import('./components/AchievementsModal').th
 const ProfileModal = lazy(() => import('./components/ProfileModal').then((m) => ({ default: m.ProfileModal })));
 const AuthModal = lazy(() => import('./components/AuthModal').then((m) => ({ default: m.AuthModal })));
 const HelpModal = lazy(() => import('./components/HelpModal').then((m) => ({ default: m.HelpModal })));
+const ReflectionFeedModal = lazy(() => import('./components/ReflectionFeedModal').then((m) => ({ default: m.ReflectionFeedModal })));
+const IOSInstallPrompt = lazy(() => import('./components/IOSInstallPrompt').then((m) => ({ default: m.IOSInstallPrompt })));
 
 export function App() {
   const [activeTab, setActiveTab] = useState<ViewTab>('calendar');
@@ -41,6 +44,7 @@ export function App() {
 
   // Modal Visibility States
   const [showHelp, setShowHelp] = useState<boolean>(false);
+  const [showReflectionFeed, setShowReflectionFeed] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [shareHabit, setShareHabit] = useState<Habit | null>(null);
@@ -170,7 +174,9 @@ export function App() {
   // Filter habits for calendar view (Category & Time of Day)
   const categories = ['All', ...Array.from(new Set(habits.map((h) => h.category).filter(Boolean)))];
   const activeHabits = habits.filter((h) => !h.archived);
-  const { unlockedCount, totalCount, level } = calculateBadges(habits);
+  
+  // Memoized 50 Badges & Level Derivation (ADR-0004)
+  const { unlockedCount, totalCount, level } = useAchievements(habits);
   
   const filteredHabits = activeHabits.filter((h) => {
     // Filter Category
@@ -219,6 +225,22 @@ export function App() {
                 {unlockedCount}/{totalCount}
               </span>
             </button>
+
+            {/* Jurnal Refleksi Feed Trigger (v1.2) */}
+            <button
+              type="button"
+              aria-label="Buka feed jurnal refleksi harian"
+              onClick={() => setShowReflectionFeed(true)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${
+                isDarkMode
+                  ? 'bg-[#161620] hover:bg-[#20202c] text-zinc-300 hover:text-white border-[#282838]'
+                  : 'bg-white hover:bg-zinc-100 text-zinc-700 hover:text-zinc-900 border-zinc-300'
+              }`}
+              title="Feed Jurnal Refleksi Harian"
+            >
+              <MaterialIcon name="edit_note" size={16} color={isDarkMode ? '#a78bfa' : '#8338ec'} />
+              <span className="hidden sm:inline">Jurnal</span>
+            </button>
           </div>
 
           {/* Desktop Nav */}
@@ -261,8 +283,8 @@ export function App() {
                   : 'bg-zinc-100 border-zinc-300'
               }`}>
                 {[
-                  { id: 'all', label: 'Semua Waktu', icon: '⚡' },
-                  { id: 'morning', label: 'Pagi', icon: '🌅' },
+                  { id: 'all', label: 'Semua Waktu', icon: '🕒' },
+                  { id: 'morning', label: 'Pagi', icon: '🌤️' },
                   { id: 'afternoon', label: 'Siang', icon: '☀️' },
                   { id: 'evening', label: 'Malam', icon: '🌙' },
                 ].map((t) => (
@@ -513,6 +535,19 @@ export function App() {
         )}
       </Suspense>
 
+      {/* Reflection Feed Modal (v1.2) */}
+      <Suspense fallback={null}>
+        {showReflectionFeed && (
+          <ReflectionFeedModal
+            isOpen={showReflectionFeed}
+            onClose={() => setShowReflectionFeed(false)}
+            habits={habits}
+            isDarkMode={isDarkMode}
+            onSaveNote={handleSaveNote}
+          />
+        )}
+      </Suspense>
+
       <Suspense fallback={null}>
         {showOnboarding && (
           <OnboardingModal
@@ -525,6 +560,9 @@ export function App() {
             isDarkMode={isDarkMode}
           />
         )}
+      </Suspense>
+      <Suspense fallback={null}>
+        <IOSInstallPrompt />
       </Suspense>
     </div>
   );

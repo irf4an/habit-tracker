@@ -144,10 +144,10 @@ export const HabitModal: React.FC<HabitModalProps> = ({
         <div className={`flex items-center justify-between mb-5 border-b pb-3 ${isDarkMode ? 'border-[#222230]' : 'border-zinc-200'}`}>
           <div>
             <h2 className={`text-xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
-              {initialHabit ? 'Ubah kebiasaan' : 'Buat kebiasaan baru yuk ✨'}
+              {initialHabit ? 'Ubah kebiasaan' : 'Buat kebiasaan baru'}
             </h2>
             <p className={`text-xs mt-0.5 leading-relaxed ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
-              {initialHabit ? 'Sesuaikan lagi biar makin pas sama kamu.' : 'Mulai kecil aja dulu, yang penting jalan terus.'}
+              {initialHabit ? 'Sesuaikan detail dan jadwal kebiasaan.' : 'Mulai dari target kecil yang mudah dijaga.'}
             </p>
           </div>
           <button
@@ -179,10 +179,10 @@ export const HabitModal: React.FC<HabitModalProps> = ({
             <p className={`block text-xs font-medium mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Waktu pelaksanaan (Habit Stacking)</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
-                { id: 'morning', label: 'Pagi', icon: '🌅' },
+                { id: 'morning', label: 'Pagi', icon: '🌤️' },
                 { id: 'afternoon', label: 'Siang', icon: '☀️' },
                 { id: 'evening', label: 'Malam', icon: '🌙' },
-                { id: 'anytime', label: 'Bebas', icon: '⚡' },
+                { id: 'anytime', label: 'Bebas', icon: '🕒' },
               ].map((t) => (
                 <button
                   type="button"
@@ -214,7 +214,7 @@ export const HabitModal: React.FC<HabitModalProps> = ({
           </button>
           {showAdvanced && (
             <div className="space-y-4 animate-in fade-in">
-          <div className={`grid grid-cols-2 gap-3 p-3 rounded-xl border ${isDarkMode ? 'bg-[#0d0d13] border-[#20202e]' : 'bg-zinc-50 border-zinc-200'}`}>
+          <div className={`grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3 rounded-xl border ${isDarkMode ? 'bg-[#0d0d13] border-[#20202e]' : 'bg-zinc-50 border-zinc-200'}`}>
             <button
               type="button"
               onClick={() => setHabitType('boolean')}
@@ -227,9 +227,9 @@ export const HabitModal: React.FC<HabitModalProps> = ({
               }`}
             >
               <div className="flex items-center gap-1.5 font-semibold text-xs mb-1">
-                <span>✓ Sekali centang</span>
+                <span>✓ Centang Harian</span>
               </div>
-              <p className={`text-[11px] ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Cukup tandai selesai hari itu</p>
+              <p className={`text-[11px] leading-tight ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Cukup tandai selesai hari itu</p>
             </button>
 
             <button
@@ -245,9 +245,26 @@ export const HabitModal: React.FC<HabitModalProps> = ({
             >
               <div className="flex items-center gap-1.5 font-semibold text-xs mb-1">
                 <Hash className="w-3.5 h-3.5 text-[#8338ec]" />
-                <span>Punya target angka</span>
+                <span>Target Angka</span>
               </div>
-              <p className={`text-[11px] ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Mis. 20 halaman / 30 menit</p>
+              <p className={`text-[11px] leading-tight ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Mis. 20 halaman / 30 menit</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setHabitType('negative')}
+              className={`p-3 rounded-lg text-left transition-all cursor-pointer border ${
+                habitType === 'negative'
+                  ? 'bg-rose-500/15 border-rose-500 text-rose-500 font-bold shadow-sm'
+                  : isDarkMode
+                  ? 'border-transparent text-zinc-400 hover:bg-[#181824]'
+                  : 'border-transparent text-zinc-600 hover:bg-zinc-200'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 font-semibold text-xs mb-1">
+                <span>🛡️ Berhenti / Menahan</span>
+              </div>
+              <p className={`text-[11px] leading-tight ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Anti-habit: No rokok, no sugar</p>
             </button>
           </div>
 
@@ -337,7 +354,7 @@ export const HabitModal: React.FC<HabitModalProps> = ({
                   <button type="button" onClick={async () => {
                     const ok = await requestNotificationPermission();
                     if (!ok) return;
-                    sendHabitNotification(`Test — ${name || 'Habit'}`, 'Hai, ini pengingat manis darimu sendiri 🤗', emoji || '🔔');
+                    sendHabitNotification(`Pengingat: ${name || 'Kebiasaan'}`, 'Waktunya menyelesaikan kebiasaan harianmu.', emoji || '🔔');
                   }} className={`ml-auto px-2.5 py-1 rounded-lg text-[11px] font-semibold border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#1a1a28] border-[#2e2e40] text-zinc-300 hover:text-white' : 'bg-white border-zinc-300 text-zinc-700'}`}>Coba dulu</button>
                 </div>
                 <p className={`text-[11px] leading-snug ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>Tenang, kamu bisa atur jam sunyi di halaman Kelola. Kalau kelewat, nanti ada snooze 10 menit kok.</p>

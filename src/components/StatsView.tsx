@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { Habit } from '../types';
 import {
   Trophy,
@@ -9,8 +9,11 @@ import {
   Layers,
   BarChart2,
 } from 'lucide-react';
-import { calculateStreak, formatDate, getYearDays } from '../utils';
+import { calculateStreak, formatDate, getYearDays, getWeeklyReviewData } from '../utils';
 import { motion, useReducedMotion } from 'motion/react';
+import { MaterialIcon } from './MaterialIcon';
+
+const WeeklyReviewModal = lazy(() => import('./WeeklyReviewModal').then((m) => ({ default: m.WeeklyReviewModal })));
 
 interface StatsViewProps {
   habits: Habit[];
@@ -19,6 +22,9 @@ interface StatsViewProps {
 
 export const StatsView: React.FC<StatsViewProps> = ({ habits, isDarkMode = true }) => {
   const reduceMotion = useReducedMotion();
+  const [showWeeklyModal, setShowWeeklyModal] = useState<boolean>(false);
+
+  const weeklyData = useMemo(() => getWeeklyReviewData(habits), [habits]);
 
   const stats = useMemo(
     () => habits.map((h) => ({ habit: h, ...calculateStreak(h.history, h.frozenDates || [], h) })),
@@ -72,6 +78,53 @@ export const StatsView: React.FC<StatsViewProps> = ({ habits, isDarkMode = true 
 
   return (
     <div className="space-y-4 sm:space-y-5">
+      {/* WEEKLY DIGEST BANNER (v2.0) */}
+      {weeklyData.hasData && (
+        <motion.div
+          {...metricCardAnim}
+          className={`border rounded-2xl p-4 sm:p-5 transition-all flex items-center justify-between gap-3 ${
+            isDarkMode
+              ? 'bg-gradient-to-r from-[#181828] via-[#141420] to-[#121217] border-[#8338ec]/40'
+              : 'bg-gradient-to-r from-purple-50 via-indigo-50/40 to-white border-purple-200 shadow-sm'
+          }`}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-[#8338ec]/20 border border-[#8338ec]/30 flex items-center justify-center text-[#a78bfa] shrink-0">
+              <MaterialIcon name="bar_chart" size={22} color="#8338ec" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className={`text-sm font-bold truncate ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
+                  Rekap Pekan Lalu: {weeklyData.score}% Konsisten
+                </h3>
+                {weeklyData.trendDiff !== null && (
+                  <span
+                    className={`text-[10px] font-mono font-bold px-2 py-0.2 rounded-full border ${
+                      weeklyData.trendDiff >= 0
+                        ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-500'
+                        : 'bg-rose-500/15 border-rose-500/30 text-rose-500'
+                    }`}
+                  >
+                    {weeklyData.trendDiff >= 0 ? '▲ +' : '▼ '}{weeklyData.trendDiff}%
+                  </span>
+                )}
+              </div>
+              <p className={`text-xs mt-0.5 truncate ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                {weeklyData.lastWeekStartStr}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowWeeklyModal(true)}
+            className="px-4 py-2 bg-[#8338ec] hover:bg-[#722ed1] text-white rounded-full text-xs font-bold shrink-0 shadow-sm cursor-pointer active:scale-95 transition-all"
+          >
+            Lihat Detail
+          </button>
+        </motion.div>
+      )}
+
       {/* 2x2 METRIC GRID - stagger entrance */}
       <motion.div
         className="grid grid-cols-2 gap-3 sm:gap-4"
@@ -334,6 +387,18 @@ export const StatsView: React.FC<StatsViewProps> = ({ habits, isDarkMode = true 
             ))}
         </div>
       </motion.div>
+
+      {/* Lazy Loaded Weekly Review Detail Modal */}
+      <Suspense fallback={null}>
+        {showWeeklyModal && (
+          <WeeklyReviewModal
+            isOpen={showWeeklyModal}
+            onClose={() => setShowWeeklyModal(false)}
+            habits={habits}
+            isDarkMode={isDarkMode}
+          />
+        )}
+      </Suspense>
     </div>
   );
 };

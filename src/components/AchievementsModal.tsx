@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Habit } from '../types';
-import { calculateBadges } from '../achievements';
+import { useAchievements } from '../hooks/useAchievements';
 import { FluentOutlineIcon } from './FluentOutlineIcon';
 
 interface AchievementsModalProps {
@@ -24,9 +24,9 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
     return () => window.removeEventListener('keydown', onEsc);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  const { badges, unlockedCount, totalCount, level, levelTitle, totalXp } = useAchievements(habits);
 
-  const { badges, unlockedCount, totalCount, level, levelTitle, totalXp } = calculateBadges(habits);
+  if (!isOpen) return null;
 
   const filteredBadges = badges.filter((b) => {
     if (activeFilter === 'unlocked') return b.unlocked;
@@ -58,10 +58,10 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
             </div>
             <div>
               <h2 className={`text-xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
-                Koleksi Lencana Kamu ✨
+                Koleksi Lencana
               </h2>
               <p className={`text-xs leading-relaxed ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                Tiap centang kecil adalah kemenangan. Yuk lihat udah sejauh apa kamu! 🎉
+                Daftar pencapaian dan lencana konsistensi yang telah terbuka.
               </p>
             </div>
           </div>
@@ -110,8 +110,8 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
           <div className="flex items-center gap-1.5">
             {[
               { id: 'all', label: `Semua (${badges.length})` },
-              { id: 'unlocked', label: `Kebuka 🎉 (${unlockedCount})` },
-              { id: 'locked', label: `Dikunci 🔒 (${totalCount - unlockedCount})` },
+              { id: 'unlocked', label: `Terbuka (${unlockedCount})` },
+              { id: 'locked', label: `Terkunci (${totalCount - unlockedCount})` },
             ].map((f) => (
               <button
                 key={f.id}

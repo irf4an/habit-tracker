@@ -86,6 +86,7 @@ export async function flushOutboxQueue(): Promise<boolean> {
           reminder_time: item.habit.reminderTime,
           history: item.habit.history,
           notes: item.habit.notes || {},
+          moods: item.habit.moods || {},
           created_at: item.habit.createdAt,
           updated_at: new Date(item.timestamp).toISOString(),
         });
@@ -167,6 +168,7 @@ export async function fetchCloudHabits(userId: string): Promise<Habit[] | null> 
       reminderTime: item.reminder_time,
       history: item.history || {},
       notes: item.notes || {},
+      moods: item.moods || {},
       createdAt: item.created_at,
     }));
   } catch (err) {
@@ -223,7 +225,7 @@ export async function fetchCloudProfile(userId: string): Promise<UserProfile | n
 
     return {
       name: data.name || 'Pengguna',
-      bio: data.bio || '1% lebih baik setiap hari 🚀',
+      bio: data.bio || 'Konsisten 1% setiap hari',
       avatarEmoji: data.avatar_emoji || '⚡',
       joinedDate: 'Akun Cloud',
     };

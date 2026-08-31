@@ -15,12 +15,14 @@ export default defineConfig({
         name: 'Minimal Habit Tracker',
         short_name: 'Habits',
         description: 'A clean and simple daily habit tracker. Track streaks, build momentum.',
-        theme_color: '#2400e8',
+        theme_color: '#0EC9A0',
         background_color: '#0b0b0e',
         display: 'standalone',
         start_url: '/',
         icons: [
           { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
+          { src: '/favicon.svg', sizes: '192x192', type: 'image/svg+xml', purpose: 'any' },
+          { src: '/favicon.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'maskable' },
         ],
       },
       workbox: {

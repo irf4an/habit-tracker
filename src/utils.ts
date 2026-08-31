@@ -138,7 +138,7 @@ function isWeeklyTargetMetForWeek(history: Record<string, number>, frozenDates: 
 export function calculateStreak(
   history: Record<string, number>,
   frozenDates: string[] = [],
-  habit?: Pick<Habit, 'frequency' | 'weeklyTargetDays' | 'type' | 'targetValue'>
+  habit?: Pick<Habit, 'frequency' | 'weeklyTargetDays' | 'type' | 'targetValue' | 'createdAt'>
 ): {
   currentStreak: number;
   bestStreak: number;
@@ -148,8 +148,15 @@ export function calculateStreak(
 } {
   const targetForHabit = habit?.targetValue ?? 1;
   const isNumericHabit = habit?.type === 'numeric';
+  const isNegativeHabit = habit?.type === 'negative';
+
+  // For negative habits: history[dateStr] === 1 means "RELAPSE" (failed day)
+  // Clean day = not relapsed (history is 0 / undefined)
   const isDayCompleted = (dateStr: string) => {
     const v = history[dateStr] ?? 0;
+    if (isNegativeHabit) {
+      return v === 0; // 0 = Clean (success), 1 = Relapse (failed)
+    }
     if (isNumericHabit) return v >= targetForHabit;
     return v === 1;
   };
@@ -161,6 +168,68 @@ export function calculateStreak(
   const isActuallyDone = (dateStr: string) => {
     return isDayCompleted(dateStr);
   };
+
+  // Special Logic for Anti-Habit / Negative Habits (Clean Days Streak)
+  if (isNegativeHabit) {
+    const today = startOfToday();
+    const createdDate = habit?.createdAt ? parseDate(habit.createdAt) : new Date(today);
+    createdDate.setHours(0, 0, 0, 0);
+
+    // 1. Calculate Current Clean Streak (counting back from today until latest relapse)
+    let currentStreak = 0;
+    let curCheck = new Date(today);
+    while (curCheck.getTime() >= createdDate.getTime()) {
+      const s = formatDate(curCheck);
+      const isRelapsed = (history[s] ?? 0) > 0;
+      if (!isRelapsed || frozenDates.includes(s)) {
+        currentStreak++;
+        curCheck.setDate(curCheck.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
+    // 2. Calculate Best Clean Streak & Total Clean Days
+    let bestStreak = 0;
+    let tempStreak = 0;
+    let cleanDaysTotal = 0;
+    let curScan = new Date(createdDate);
+
+    while (curScan.getTime() <= today.getTime()) {
+      const s = formatDate(curScan);
+      const isRelapsed = (history[s] ?? 0) > 0;
+      if (!isRelapsed || frozenDates.includes(s)) {
+        cleanDaysTotal++;
+        tempStreak++;
+        if (tempStreak > bestStreak) bestStreak = tempStreak;
+      } else {
+        tempStreak = 0;
+      }
+      curScan.setDate(curScan.getDate() + 1);
+    }
+    if (currentStreak > bestStreak) bestStreak = currentStreak;
+
+    // 3. Completion Rate 30D (clean days / 30)
+    const past30 = new Date(today);
+    past30.setDate(past30.getDate() - 29);
+    let past30Clean = 0;
+    let pCur = new Date(past30);
+    while (pCur.getTime() <= today.getTime()) {
+      const s = formatDate(pCur);
+      const isRelapsed = (history[s] ?? 0) > 0;
+      if (!isRelapsed || frozenDates.includes(s)) past30Clean++;
+      pCur.setDate(pCur.getDate() + 1);
+    }
+    const completionRate = Math.round((past30Clean / 30) * 100);
+
+    return {
+      currentStreak,
+      bestStreak,
+      completionRate,
+      totalCompleted: cleanDaysTotal,
+      frozenCount: frozenDates.length,
+    };
+  }
 
   // Weekly-target streak (e.g. 4x/minggu): streak = minggu beruntun yang targetnya tercapai
   const isWeekly = habit?.frequency === 'weekly_target';
@@ -360,6 +429,147 @@ export function calculateStreak(
     completionRate,
     totalCompleted: completedCount,
     frozenCount: frozenDates.length,
+  };
+}
+
+// Weekly Review & Automated Digest Helper (ISO Week: Monday - Sunday)
+// Formatter tanggal natural Indonesia (17–23 Agustus)
+function formatNaturalWeekRange(start: Date, end: Date): string {
+  const monthNames = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+  ];
+
+  const sameMonth = start.getMonth() === end.getMonth();
+
+  if (sameMonth) {
+    return `${start.getDate()}–${end.getDate()} ${monthNames[end.getMonth()]}`;
+  }
+
+  // Cross-month: 29 Agustus – 4 September
+  return `${start.getDate()} ${monthNames[start.getMonth()]} – ${end.getDate()} ${monthNames[end.getMonth()]}`;
+}
+
+export interface WeeklyReviewReport {
+  lastWeekStartStr: string; // Natural date (17–23 Agustus)
+  lastWeekEndStr: string;   // YYYY-MM-DD raw (Minggu, untuk compat)
+  hasData: boolean;
+  score: number; // 0 - 100%
+  previousScore: number | null; // null jika 2 pekan lalu kosong
+  trendDiff: number | null; // e.g. +12 or -5
+  bestHabit: { name: string; emoji: string; color: string; rate: number } | null;
+  needsAttentionHabit: { name: string; emoji: string; color: string; rate: number } | null;
+  habitBreakdown: Array<{
+    id: string;
+    name: string;
+    emoji: string;
+    color: string;
+    completedDays: number;
+    scheduledDays: number;
+    rate: number;
+  }>;
+}
+
+export function getWeeklyReviewData(habits: Habit[]): WeeklyReviewReport {
+  const today = startOfToday();
+  const currentMonday = getWeekStart(today);
+
+  // Pekan Lalu: Senin s/d Minggu lalu
+  const lastWeekStart = new Date(currentMonday);
+  lastWeekStart.setDate(currentMonday.getDate() - 7);
+  const lastWeekEnd = new Date(lastWeekStart);
+  lastWeekEnd.setDate(lastWeekStart.getDate() + 6);
+
+  // Dua Pekan Lalu: Senin s/d Minggu 2 pekan lalu
+  const prevWeekStart = new Date(lastWeekStart);
+  prevWeekStart.setDate(lastWeekStart.getDate() - 7);
+  const prevWeekEnd = new Date(prevWeekStart);
+  prevWeekEnd.setDate(prevWeekStart.getDate() + 6);
+
+  const activeHabits = habits.filter((h) => !h.archived);
+
+  // Helper evaluator per habit dalam rentang tanggal
+  const evaluateRange = (start: Date, end: Date) => {
+    let totalScheduled = 0;
+    let totalDone = 0;
+    const perHabit: Array<{ id: string; name: string; emoji: string; color: string; completedDays: number; scheduledDays: number; rate: number }> = [];
+
+    activeHabits.forEach((h) => {
+      let schedCount = 0;
+      let doneCount = 0;
+      const target = h.targetValue || 1;
+      const isNeg = h.type === 'negative';
+      const isNum = h.type === 'numeric';
+
+      const cur = new Date(start);
+      const habitCreatedStr = h.createdAt || '1970-01-01';
+
+      while (cur.getTime() <= end.getTime()) {
+        const s = formatDate(cur);
+        // Kebiasaan hanya dihitung jika tanggal yang dievaluasi >= tanggal kebiasaan dibuat
+        const isAfterCreated = s >= habitCreatedStr;
+
+        if (isAfterCreated && isScheduledDate(cur, h.frequency)) {
+          schedCount++;
+          const val = h.history[s] ?? 0;
+          const isFrozen = (h.frozenDates || []).includes(s);
+
+          if (isNeg) {
+            // Negative: clean (val === 0) or frozen
+            if (val === 0 || isFrozen) doneCount++;
+          } else if (isNum) {
+            if (val >= target || isFrozen) doneCount++;
+          } else {
+            if (val === 1 || isFrozen) doneCount++;
+          }
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
+
+      totalScheduled += schedCount;
+      totalDone += doneCount;
+      const rate = schedCount > 0 ? Math.round((doneCount / schedCount) * 100) : 0;
+      perHabit.push({
+        id: h.id,
+        name: h.name,
+        emoji: h.emoji,
+        color: h.color,
+        completedDays: doneCount,
+        scheduledDays: schedCount,
+        rate,
+      });
+    });
+
+    const score = totalScheduled > 0 ? Math.round((totalDone / totalScheduled) * 100) : 0;
+    return { score, totalScheduled, totalDone, perHabit };
+  };
+
+  const lastWeek = evaluateRange(lastWeekStart, lastWeekEnd);
+  const prevWeek = evaluateRange(prevWeekStart, prevWeekEnd);
+
+  const hasData = activeHabits.length > 0 && lastWeek.totalScheduled > 0;
+  const hasPrevData = activeHabits.length > 0 && prevWeek.totalDone > 0;
+
+  const previousScore = hasPrevData ? prevWeek.score : null;
+  const trendDiff = previousScore !== null ? lastWeek.score - previousScore : null;
+
+  // Filter out habits that were created after the evaluated week (scheduledDays === 0)
+  const evaluatedHabits = lastWeek.perHabit.filter((h) => h.scheduledDays > 0);
+  const sortedHabits = [...evaluatedHabits].sort((a, b) => b.rate - a.rate);
+  const bestHabit = sortedHabits.length > 0 && sortedHabits[0].rate > 0 ? sortedHabits[0] : null;
+  const lowestHabit = sortedHabits.length > 0 ? sortedHabits[sortedHabits.length - 1] : null;
+  const needsAttentionHabit = lowestHabit && lowestHabit.rate < 100 ? lowestHabit : null;
+
+  return {
+    lastWeekStartStr: formatNaturalWeekRange(lastWeekStart, lastWeekEnd),
+    lastWeekEndStr: formatDate(lastWeekEnd),
+    hasData: evaluatedHabits.length > 0 && lastWeek.totalScheduled > 0,
+    score: lastWeek.score,
+    previousScore,
+    trendDiff,
+    bestHabit,
+    needsAttentionHabit,
+    habitBreakdown: sortedHabits,
   };
 }
 

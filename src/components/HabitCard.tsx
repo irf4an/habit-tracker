@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Habit } from '../types';
+import { Habit, DailyMood } from '../types';
 import { getTodayString, getYearDays, calculateStreak, canFreezeOnDate, freezeRemaining, FREEZE_WEEKLY_LIMIT } from '../utils';
 import { MaterialIcon } from './MaterialIcon';
 import confetti from 'canvas-confetti';
@@ -11,7 +11,7 @@ interface HabitCardProps {
   isDarkMode?: boolean;
   onToggleDate: (habitId: string, dateStr: string, value?: number) => void;
   onToggleFreeze?: (habitId: string, dateStr: string) => void;
-  onSaveNote?: (habitId: string, dateStr: string, note: string) => void;
+  onSaveNote?: (habitId: string, dateStr: string, note: string, mood?: DailyMood) => void;
   onDeleteHabit?: (habitId: string) => void;
   onEditHabit?: (habit: Habit) => void;
   onShareHabit?: (habit: Habit) => void;
@@ -34,20 +34,24 @@ export const HabitCard: React.FC<HabitCardProps> = ({
 }) => {
   const todayStr = getTodayString();
   const isNumeric = habit.type === 'numeric';
+  const isNegative = habit.type === 'negative';
   const targetVal = habit.targetValue || 1;
   const currentTodayVal = habit.history[todayStr] || 0;
-  const isTodayCompleted = isNumeric ? currentTodayVal >= targetVal : currentTodayVal === 1;
+  // For negative habit: completed means clean (not relapsed, value === 0)
+  const isTodayCompleted = isNegative ? currentTodayVal === 0 : isNumeric ? currentTodayVal >= targetVal : currentTodayVal === 1;
+  const isTodayRelapsed = isNegative && currentTodayVal > 0;
   const isTodayFrozen = (habit.frozenDates || []).includes(todayStr);
 
   const streakStats = useMemo(
     () => calculateStreak(habit.history, habit.frozenDates || [], habit),
-    [habit.history, habit.frozenDates, habit.frequency, habit.weeklyTargetDays]
+    [habit.history, habit.frozenDates, habit.frequency, habit.weeklyTargetDays, habit.type, habit.targetValue, habit.createdAt]
   );
 
   // Selected cell for note/detail modal
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [noteText, setNoteText] = useState<string>('');
   const [cellVal, setCellVal] = useState<number>(0);
+  const [selectedMood, setSelectedMood] = useState<DailyMood | undefined>(undefined);
 
   // Adaptive weeks based on screen width: 18 weeks on small mobile (fits 320-375px), 26 on tablet, 52 on full view
   const [windowWidth, setWindowWidth] = useState<number>(() => (typeof window !== 'undefined' ? window.innerWidth : 380));
@@ -63,7 +67,17 @@ export const HabitCard: React.FC<HabitCardProps> = ({
 
   const handleCheckToday = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isNumeric) {
+    if (isNegative) {
+      // Toggle Relapse: 0 = Clean, 1 = Relapse
+      const next = isTodayRelapsed ? 0 : 1;
+      onToggleDate(habit.id, todayStr, next);
+      if (next === 0) {
+        playCheckSound();
+        triggerConfetti();
+      } else {
+        playUncheckSound();
+      }
+    } else if (isNumeric) {
       const next = currentTodayVal >= targetVal ? 0 : targetVal;
       onToggleDate(habit.id, todayStr, next);
       if (next >= targetVal) {
@@ -114,13 +128,14 @@ export const HabitCard: React.FC<HabitCardProps> = ({
     setSelectedDate(dateStr);
     setNoteText(habit.notes?.[dateStr] || '');
     setCellVal(habit.history[dateStr] || 0);
+    setSelectedMood(habit.moods?.[dateStr]);
   };
 
   const saveCellDetails = () => {
     if (!selectedDate) return;
     onToggleDate(habit.id, selectedDate, cellVal);
     if (onSaveNote) {
-      onSaveNote(habit.id, selectedDate, noteText);
+      onSaveNote(habit.id, selectedDate, noteText, selectedMood);
     }
     setSelectedDate(null);
   };
@@ -159,29 +174,47 @@ export const HabitCard: React.FC<HabitCardProps> = ({
               type="button"
               onClick={handleCheckToday}
               aria-label={
-                isTodayCompleted
+                isNegative
+                  ? isTodayRelapsed
+                    ? `Hari ini tercatat kambuh untuk ${habit.name}. Klik untuk tandai bersih.`
+                    : `Hari ini bersih untuk ${habit.name}. Klik jika mengalami kambuh/relapse.`
+                  : isTodayCompleted
                   ? `Batalkan selesai hari ini untuk ${habit.name}`
                   : `Tandai selesai hari ini untuk ${habit.name}${isNumeric ? ` (${targetVal} ${habit.unit || 'unit'})` : ''}`
               }
               aria-pressed={isTodayCompleted}
               title={
-                isTodayCompleted
+                isNegative
+                  ? isTodayRelapsed
+                    ? 'Kambuh hari ini (klik untuk batalkan)'
+                    : 'Bersih & bebas hari ini ✓'
+                  : isTodayCompleted
                   ? `Selesai! (${currentTodayVal}/${targetVal} ${habit.unit || ''})`
                   : `Centang hari ini (${currentTodayVal}/${targetVal} ${habit.unit || ''})`
               }
               className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer border shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
-                isTodayCompleted
+                isNegative
+                  ? isTodayRelapsed
+                    ? 'bg-rose-500 text-white border-transparent shadow-md'
+                    : 'border-emerald-500/50 bg-emerald-500/10 text-emerald-500 shadow-sm'
+                  : isTodayCompleted
                   ? 'border-transparent text-white shadow-md transform active:scale-95'
                   : isDarkMode
                   ? 'border-[#2e2e3d] bg-[#16161f] text-zinc-500 hover:border-zinc-400 hover:text-zinc-200'
                   : 'border-zinc-300 bg-zinc-100 text-zinc-400 hover:border-zinc-500 hover:text-zinc-700'
               }`}
               style={{
-                backgroundColor: isTodayCompleted ? habit.color : undefined,
-                boxShadow: isTodayCompleted ? `0 0 16px ${habit.color}66` : undefined,
+                backgroundColor: isNegative ? (isTodayRelapsed ? '#f43f5e' : undefined) : isTodayCompleted ? habit.color : undefined,
+                boxShadow: isNegative && !isTodayRelapsed ? `0 0 10px rgba(16,185,129,0.2)` : isTodayCompleted ? `0 0 16px ${habit.color}66` : undefined,
               }}
             >
-              {isTodayCompleted ? (
+              {isNegative ? (
+                isTodayRelapsed ? (
+                  <span className="text-xs font-bold leading-none">✕</span>
+                ) : (
+                  <span className="text-xs leading-none">🛡️</span>
+                )
+              ) : isTodayCompleted ? (
                 <MaterialIcon name="check" size={20} color="#ffffff" />
               ) : isNumeric && currentTodayVal > 0 ? (
                 <span className={`text-[11px] font-mono font-bold ${isDarkMode ? 'text-white' : 'text-zinc-900'}`} aria-hidden>
@@ -298,7 +331,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
                 ? isDarkMode ? 'text-sky-300 bg-sky-500/10 border-sky-500/25' : 'text-sky-800 bg-sky-50 border-sky-300'
                 : isDarkMode ? 'text-indigo-300 bg-indigo-500/10 border-indigo-500/25' : 'text-indigo-800 bg-indigo-50 border-indigo-300'
             }`}>
-              <span>{habit.timeOfDay === 'morning' ? '🌅 Pagi' : habit.timeOfDay === 'afternoon' ? '☀️ Siang' : '🌙 Malam'}</span>
+              <span>{habit.timeOfDay === 'morning' ? '🌤️ Pagi' : habit.timeOfDay === 'afternoon' ? '☀️ Siang' : '🌙 Malam'}</span>
             </span>
           )}
 
@@ -324,14 +357,25 @@ export const HabitCard: React.FC<HabitCardProps> = ({
           <span
             className="font-bold px-2.5 py-0.5 rounded-full text-[10px] font-mono flex items-center gap-1 shrink-0 border leading-none"
             style={{
-              backgroundColor: `${habit.color}18`,
-              color: habit.color,
-              borderColor: `${habit.color}30`,
+              backgroundColor: isNegative ? '#10b98118' : `${habit.color}18`,
+              color: isNegative ? '#10b981' : habit.color,
+              borderColor: isNegative ? '#10b98130' : `${habit.color}30`,
             }}
           >
-            <MaterialIcon name="local_fire_department" size={12} color={habit.color} />
-            {streakStats.currentStreak > 0 ? `${streakStats.currentStreak} hari` : 'Belum ada streak'}
+            <MaterialIcon name={isNegative ? 'check' : 'local_fire_department'} size={12} color={isNegative ? '#10b981' : habit.color} />
+            {isNegative
+              ? `${streakStats.currentStreak} hari bebas`
+              : streakStats.currentStreak > 0
+              ? `${streakStats.currentStreak} hari`
+              : 'Belum ada streak'}
           </span>
+
+          {/* Anti-Habit Mode Badge */}
+          {isNegative && (
+            <span className="text-[10px] font-medium text-rose-500 bg-rose-500/10 border border-rose-500/20 px-2.5 py-0.5 rounded-full shrink-0 inline-flex items-center gap-1 leading-none">
+              <span>🛡️ Anti-Habit</span>
+            </span>
+          )}
 
           {/* Target */}
           {isNumeric && (
@@ -368,6 +412,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
               setSelectedDate(todayStr);
               setNoteText(habit.notes?.[todayStr] || '');
               setCellVal(habit.history[todayStr] || 0);
+              setSelectedMood(habit.moods?.[todayStr]);
             }}
             className={`ml-1 w-6 h-6 flex items-center justify-center rounded-full border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${
               isTodayCompleted || habit.notes?.[todayStr]
@@ -439,12 +484,19 @@ export const HabitCard: React.FC<HabitCardProps> = ({
                   <div key={wIdx} className="flex flex-col gap-[3px]" role="row">
                     {week.map((day: { date: Date; dateStr: string; dayOfWeek: number; isFuture: boolean }) => {
                       const rawVal = habit.history[day.dateStr] || 0;
-                      const isDone = isNumeric ? rawVal >= targetVal : rawVal === 1;
-                      const isPartial = isNumeric && rawVal > 0 && rawVal < targetVal;
+                      const isRelapsed = isNegative && rawVal > 0;
+                      const isDone = isNegative
+                        ? !day.isFuture && !isRelapsed && (!habit.createdAt || day.dateStr >= habit.createdAt)
+                        : isNumeric
+                        ? rawVal >= targetVal
+                        : rawVal === 1;
+                      const isPartial = !isNegative && isNumeric && rawVal > 0 && rawVal < targetVal;
                       const isFrozen = (habit.frozenDates || []).includes(day.dateStr);
                       const isToday = day.dateStr === todayStr;
                       const hasNote = !!habit.notes?.[day.dateStr];
-                      const ariaLabel = `${day.dateStr}: ${isFrozen ? 'beku, ' : ''}${isDone ? `selesai ${rawVal}${habit.unit ? ' ' + habit.unit : ''}` : isPartial ? `sebagian ${rawVal} dari ${targetVal}` : 'belum selesai'}${hasNote ? ', ada catatan' : ''}${isToday ? ', hari ini' : ''}${isDone || isFrozen ? ', ketuk untuk ubah' : ', ketuk untuk tandai selesai'}. Catatan: ketuk lama atau Shift+klik untuk detail.`;
+                      const ariaLabel = isNegative
+                        ? `${day.dateStr}: ${isRelapsed ? 'kambuh (relapse)' : 'bersih'}${hasNote ? ', ada catatan' : ''}`
+                        : `${day.dateStr}: ${isFrozen ? 'beku, ' : ''}${isDone ? `selesai ${rawVal}${habit.unit ? ' ' + habit.unit : ''}` : isPartial ? `sebagian ${rawVal} dari ${targetVal}` : 'belum selesai'}${hasNote ? ', ada catatan' : ''}${isToday ? ', hari ini' : ''}`;
 
                       return (
                         <button
@@ -458,13 +510,29 @@ export const HabitCard: React.FC<HabitCardProps> = ({
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCellClick(day.dateStr, e as unknown as React.MouseEvent); }
                           }}
-                          title={`${day.dateStr}${isFrozen ? ' [❄️ Streak Freeze]' : ''}${rawVal > 0 ? ` (${rawVal}${habit.unit ? ' ' + habit.unit : ''})` : ''}${hasNote ? ' [Note attached]' : ''}${isToday ? ' - Today' : ''}`}
+                          title={`${day.dateStr}${isRelapsed ? ' [⚠️ Relapse/Kambuh]' : isNegative && isDone ? ' [🛡️ Bersih]' : ''}${isFrozen ? ' [❄️ Streak Freeze]' : ''}${hasNote ? ' [Note attached]' : ''}${isToday ? ' - Today' : ''}`}
                           className={`w-3 h-3 rounded-[2.5px] relative touch-manipulation transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] focus-visible:ring-offset-1 focus-visible:ring-offset-transparent ${
                             day.isFuture ? 'bg-[#15151e] opacity-20 cursor-not-allowed' : 'cursor-pointer hover:scale-125 active:scale-95'
                           } ${isToday && !isDone && !isFrozen ? 'ring-1.5 ring-[#8338ec]' : ''}`}
                           style={{
-                            backgroundColor: isDone ? habit.color : isFrozen ? '#0284c7' : isPartial ? `${habit.color}88` : day.isFuture ? (isDarkMode ? '#14141c' : '#f4f4f5') : (isDarkMode ? '#1e1e28' : '#e4e4e7'),
-                            boxShadow: isDone ? `0 0 6px ${habit.color}88` : isFrozen ? '0 0 8px rgba(2,132,199,0.7)' : undefined,
+                            backgroundColor: isRelapsed
+                              ? '#f43f5e'
+                              : isDone
+                              ? (isNegative ? '#10b981' : habit.color)
+                              : isFrozen
+                              ? '#0284c7'
+                              : isPartial
+                              ? `${habit.color}88`
+                              : day.isFuture
+                              ? (isDarkMode ? '#14141c' : '#f4f4f5')
+                              : (isDarkMode ? '#1e1e28' : '#e4e4e7'),
+                            boxShadow: isRelapsed
+                              ? '0 0 6px rgba(244,63,94,0.7)'
+                              : isDone
+                              ? `0 0 6px ${isNegative ? '#10b98188' : habit.color + '88'}`
+                              : isFrozen
+                              ? '0 0 8px rgba(2,132,199,0.7)'
+                              : undefined,
                           }}
                         >
                           {hasNote && <span aria-hidden className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-white rounded-full border border-black/20" />}
@@ -528,7 +596,24 @@ export const HabitCard: React.FC<HabitCardProps> = ({
               </button>
             </div>
 
-            {isNumeric ? (
+            {isNegative ? (
+              <div>
+                <p id={`habit-day-status-${habit.id}-${selectedDate}`} className={`block text-[11px] font-mono mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Status Anti-Habit {selectedDate}</p>
+                <button
+                  type="button"
+                  aria-describedby={`habit-day-status-${habit.id}-${selectedDate}`}
+                  aria-pressed={cellVal === 1}
+                  onClick={() => setCellVal((v) => (v === 1 ? 0 : 1))}
+                  className={`w-full py-2.5 rounded-xl font-bold text-xs border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${
+                    cellVal === 1
+                      ? 'bg-rose-500/20 border-rose-500 text-rose-500'
+                      : 'bg-emerald-500/20 border-emerald-500 text-emerald-500'
+                  }`}
+                >
+                  {cellVal === 1 ? '⚠️ Tercatat Kambuh (Relapse)' : '🛡️ Bersih & Berhasil Menahan Diri'}
+                </button>
+              </div>
+            ) : isNumeric ? (
               <div>
                 <label htmlFor={`habit-day-value-${habit.id}-${selectedDate}`} className={`block text-[11px] font-mono mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
                   Catat Angka ({habit.unit || 'unit'} - Target: {targetVal})
@@ -551,6 +636,39 @@ export const HabitCard: React.FC<HabitCardProps> = ({
                 </button>
               </div>
             )}
+            {/* Mood Selector (Mini Mood Tracker v1.2) */}
+            <div>
+              <p className={`block text-[11px] font-mono mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Mood / Suasana Hati</p>
+              <div className={`flex items-center justify-between gap-1.5 p-1 rounded-xl border ${
+                isDarkMode ? 'bg-[#0e0e14] border-[#252538]' : 'bg-zinc-100 border-zinc-300'
+              }`}>
+                {[
+                  { id: 'happy', emoji: '😊', label: 'Senang' },
+                  { id: 'energetic', emoji: '⚡', label: 'Semangat' },
+                  { id: 'focused', emoji: '🔥', label: 'Fokus' },
+                  { id: 'tired', emoji: '😴', label: 'Lelah' },
+                  { id: 'stressed', emoji: '🌧️', label: 'Berat' },
+                ].map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setSelectedMood(selectedMood === m.id ? undefined : (m.id as DailyMood))}
+                    className={`flex-1 py-1.5 rounded-lg flex flex-col items-center gap-0.5 text-center transition-all cursor-pointer ${
+                      selectedMood === m.id
+                        ? 'bg-[#8338ec] text-white shadow-xs font-bold'
+                        : isDarkMode
+                        ? 'text-zinc-400 hover:text-white hover:bg-white/5'
+                        : 'text-zinc-700 hover:text-zinc-950 hover:bg-zinc-200/80'
+                    }`}
+                    title={m.label}
+                  >
+                    <span className="text-base leading-none">{m.emoji}</span>
+                    <span className="text-[9.5px] leading-none font-medium">{m.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div>
               <label htmlFor={`habit-day-note-${habit.id}-${selectedDate}`} className={`block text-[11px] font-mono mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Catatan Harian (Opsional)</label>
               <textarea id={`habit-day-note-${habit.id}-${selectedDate}`} rows={2} placeholder="Bagaimana progres kebiasaanmu hari ini?" value={noteText} onChange={(e) => setNoteText(e.target.value)} className={`w-full border rounded-lg p-2.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0e0e14] border-[#28283a] text-white placeholder-zinc-600' : 'bg-zinc-50 border-zinc-300 text-zinc-900 placeholder-zinc-400'}`} />

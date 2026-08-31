@@ -34,7 +34,7 @@ export function useAuthProfile(
     ];
     return {
       name: 'Pengguna',
-      bio: '1% lebih baik setiap hari 🚀',
+      bio: 'Konsisten 1% setiap hari',
       avatarEmoji: '⚡',
       joinedDate: `${monthNames[today.getMonth()]} ${today.getFullYear()}`,
     };

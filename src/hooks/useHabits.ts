@@ -54,18 +54,27 @@ export function useHabits(userId: string | null) {
     );
   };
 
-  // Save daily reflection note
-  const handleSaveNote = (habitId: string, dateStr: string, note: string) => {
+  // Save daily reflection note & optional mood
+  const handleSaveNote = (habitId: string, dateStr: string, note: string, mood?: import('../types').DailyMood) => {
     setHabits((prev) =>
       prev.map((h) => {
         if (h.id !== habitId) return h;
         const newNotes = { ...(h.notes || {}) };
+        const newMoods = { ...(h.moods || {}) };
+
         if (note.trim()) {
           newNotes[dateStr] = note.trim();
         } else {
           delete newNotes[dateStr];
         }
-        const updated = { ...h, notes: newNotes };
+
+        if (mood) {
+          newMoods[dateStr] = mood;
+        } else if (!note.trim()) {
+          delete newMoods[dateStr];
+        }
+
+        const updated = { ...h, notes: newNotes, moods: newMoods };
         if (userIdRef.current) syncHabitToCloud(userIdRef.current, updated);
         return updated;
       })
@@ -183,19 +192,60 @@ export function useHabits(userId: string | null) {
     );
   };
 
-  // Demo sample reset
+  // Demo sample reset (Realistic multi-habit test data for 2-4 weeks with random pattern)
   const handleResetSample = () => {
-    if (window.confirm('Muat contoh kebiasaan demo?')) {
+    if (window.confirm('Muat contoh kebiasaan demo dengan riwayat 2-4 pekan terakhir?')) {
       const today = new Date();
       const gymHistory: Record<string, number> = {};
       const readingHistory: Record<string, number> = {};
-      for (let i = 0; i < 60; i++) {
+      const codingHistory: Record<string, number> = {};
+      const noSugarHistory: Record<string, number> = {};
+      const bikingHistory: Record<string, number> = {};
+
+      const notesDemo: Record<string, string> = {};
+      const moodsDemo: Record<string, import('../types').DailyMood> = {};
+
+      // Seed 28 days back (4 weeks)
+      for (let i = 0; i < 28; i++) {
         const d = new Date(today);
         d.setDate(today.getDate() - i);
         const dateStr = formatDate(d);
-        if (i < 3 || i % 2 === 0) gymHistory[dateStr] = 1;
-        if (i % 3 === 0) readingHistory[dateStr] = 20;
+        const dayOfWeek = d.getDay(); // 0 Sun .. 6 Sat
+
+        // 1. Olahraga Pagi: rajin di weekdays (75% random)
+        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+          if (i % 3 !== 1) gymHistory[dateStr] = 1;
+        }
+
+        // 2. Baca Buku: target 20 halaman (random 15 - 30 pages)
+        if (i % 2 === 0 || i === 1) {
+          readingHistory[dateStr] = i % 4 === 0 ? 30 : 20;
+          if (i === 1 || i === 4 || i === 8) {
+            notesDemo[dateStr] = i === 1 ? 'Baca bab 4 tentang habits loop' : 'Refleksi bab 2 sangat aplikatif';
+            moodsDemo[dateStr] = i === 1 ? 'focused' : 'happy';
+          }
+        }
+
+        // 3. Coding 60 Menit: 5x seminggu
+        if (i % 7 !== 0 && i % 7 !== 4) {
+          codingHistory[dateStr] = 60;
+        }
+
+        // 4. Anti-Habit (No Sugar): hanya relapse di hari ke-6 dan ke-15
+        if (i === 6 || i === 15) {
+          noSugarHistory[dateStr] = 1; // Relapse
+        }
+
+        // 5. Gowes Weekend: hanya Sabtu & Minggu
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+          if (i < 20) bikingHistory[dateStr] = 1;
+        }
       }
+
+      const startMonthAgo = new Date(today);
+      startMonthAgo.setDate(today.getDate() - 30);
+      const createdDateStr = formatDate(startMonthAgo);
+
       const demoHabits: Habit[] = [
         {
           id: 'demo-1',
@@ -204,8 +254,9 @@ export function useHabits(userId: string | null) {
           color: '#3b82f6',
           category: 'Fitness',
           type: 'boolean',
-          frequency: 'everyday',
-          createdAt: formatDate(today),
+          frequency: 'weekdays',
+          timeOfDay: 'morning',
+          createdAt: createdDateStr,
           history: gymHistory,
           notes: {},
         },
@@ -219,11 +270,55 @@ export function useHabits(userId: string | null) {
           targetValue: 20,
           unit: 'halaman',
           frequency: 'everyday',
-          createdAt: formatDate(today),
+          timeOfDay: 'evening',
+          createdAt: createdDateStr,
           history: readingHistory,
+          notes: notesDemo,
+          moods: moodsDemo,
+        },
+        {
+          id: 'demo-3',
+          name: 'Fokus Belajar Coding',
+          emoji: '💻',
+          color: '#8338ec',
+          category: 'Productivity',
+          type: 'numeric',
+          targetValue: 60,
+          unit: 'menit',
+          frequency: 'everyday',
+          timeOfDay: 'afternoon',
+          createdAt: createdDateStr,
+          history: codingHistory,
+          notes: {},
+        },
+        {
+          id: 'demo-4',
+          name: 'No Sugar / Manis',
+          emoji: '🛡️',
+          color: '#10b981',
+          category: 'Health',
+          type: 'negative',
+          frequency: 'everyday',
+          timeOfDay: 'anytime',
+          createdAt: createdDateStr,
+          history: noSugarHistory,
+          notes: {},
+        },
+        {
+          id: 'demo-5',
+          name: 'Gowes Sepeda',
+          emoji: '🚴',
+          color: '#06b6d4',
+          category: 'Fitness',
+          type: 'boolean',
+          frequency: 'weekends',
+          timeOfDay: 'morning',
+          createdAt: createdDateStr,
+          history: bikingHistory,
           notes: {},
         },
       ];
+
       setHabits(demoHabits);
       if (userIdRef.current) demoHabits.forEach((h) => syncHabitToCloud(userIdRef.current!, h));
     }

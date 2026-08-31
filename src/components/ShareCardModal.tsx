@@ -59,7 +59,7 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ habit, onClose, 
       if (navigator.share && navigator.canShare({ files: [file] })) {
         await navigator.share({
           title: `Rekor ${habit.name} Saya`,
-          text: `Sudah ${streakStats.currentStreak} hari konsisten di ${habit.name}! 🔥`,
+          text: `Sudah ${streakStats.currentStreak} hari konsisten di ${habit.name}.`,
           files: [file],
         });
       } else {
@@ -232,7 +232,7 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({ habit, onClose, 
               isDarkMode ? 'text-zinc-500 border-[#1e1e2c]' : 'text-zinc-400 border-zinc-200'
             }`}>
               <span>Tanggal: {todayStr}</span>
-              <span>Disiplin setiap hari 🔥</span>
+              <span>Disiplin setiap hari</span>
             </div>
           </div>
         </div>
