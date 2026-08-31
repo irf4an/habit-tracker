@@ -192,7 +192,7 @@ export function App() {
   }), [activeHabits, selectedCategory, selectedTimeOfDay]);
 
   return (
-    <div className={`min-h-[100dvh] flex flex-col transition-colors duration-200 ${isDarkMode ? 'bg-[#0b0b0e] text-zinc-100 selection:bg-indigo-600 selection:text-white' : 'bg-[#fbfbfe] text-zinc-900 selection:bg-indigo-500 selection:text-white'}`}>
+    <div className={`min-h-[100dvh] min-h-[100svh] flex flex-col transition-colors duration-200 ${isDarkMode ? 'bg-[#0b0b0e] text-zinc-100 selection:bg-indigo-600 selection:text-white' : 'bg-[#fbfbfe] text-zinc-900 selection:bg-indigo-500 selection:text-white'}`}>
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-[#8338ec] text-white px-3 py-1.5 rounded-lg text-sm z-[100]">Lompat ke konten</a>
       <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" aria-hidden />
 
@@ -464,8 +464,16 @@ export function App() {
         isDarkMode={isDarkMode}
       />
 
-      {/* Modals with Lazy Suspense */}
-      <Suspense fallback={null}>
+      {/* Modals with Lazy Suspense — Pomodoro needs loading fallback to avoid black blank in PWA standalone */}
+      <Suspense
+        fallback={
+          pomodoroSession ? (
+            <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md" aria-busy="true">
+              <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+            </div>
+          ) : null
+        }
+      >
         <PomodoroTimer
           session={pomodoroSession}
           onUpdateSession={setPomodoroSession}
