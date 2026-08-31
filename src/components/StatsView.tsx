@@ -9,7 +9,7 @@ import {
   Layers,
   BarChart2,
 } from 'lucide-react';
-import { calculateStreak, formatDate, getYearDays, getWeeklyReviewData } from '../utils';
+import { calculateStreak, formatDate, getYearDays, getWeeklyReviewData, formatFocusMinutes, getTodayString } from '../utils';
 import { MaterialIcon } from './MaterialIcon';
 
 const WeeklyReviewModal = lazy(() => import('./WeeklyReviewModal').then((m) => ({ default: m.WeeklyReviewModal })));
@@ -314,6 +314,12 @@ export const StatsView: React.FC<StatsViewProps> = ({ habits, isDarkMode = true 
                     </div>
                     <div className={`text-[11px] sm:text-[12px] font-normal mt-0.5 leading-tight ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
                       {totalCompleted}x selesai • Rekor: <span className={isDarkMode ? 'text-zinc-200' : 'text-zinc-700'}>{bestStreak} hari</span>
+                      {(() => {
+                        const todayFocus = habit.focusLog?.[getTodayString()] || 0;
+                        const todaySessions = habit.focusSessions?.[getTodayString()] || 0;
+                        if (todayFocus <= 0) return null;
+                        return <span className="ml-1">• Hari ini fokus {formatFocusMinutes(todayFocus)}{todaySessions > 0 ? ` (${todaySessions} sesi)` : ''}</span>;
+                      })()}
                     </div>
                   </div>
                 </div>

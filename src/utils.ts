@@ -16,6 +16,14 @@ export function getTodayString(): string {
   return formatDate(new Date());
 }
 
+export function formatFocusMinutes(totalMinutes: number): string {
+  if (totalMinutes <= 0) return '0m';
+  if (totalMinutes < 60) return `${totalMinutes}m`;
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return m === 0 ? `${h}j` : `${h}j ${m}m`;
+}
+
 export interface GridColumn {
   date: Date;
   dateStr: string;

@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Habit, DailyMood } from '../types';
-import { getTodayString, getYearDays, calculateStreak, canFreezeOnDate, freezeRemaining, FREEZE_WEEKLY_LIMIT } from '../utils';
+import { getTodayString, getYearDays, calculateStreak, canFreezeOnDate, freezeRemaining, FREEZE_WEEKLY_LIMIT, formatFocusMinutes } from '../utils';
 import { MaterialIcon } from './MaterialIcon';
 import confetti from 'canvas-confetti';
 import { playCheckSound, playUncheckSound } from '../sound';
@@ -403,8 +403,18 @@ export const HabitCard: React.FC<HabitCardProps> = React.memo(({
           )}
         </div>
 
-        <div className={`flex items-center gap-1.5 text-[10.5px] font-mono font-light tracking-wide ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
+        <div className={`flex items-center flex-wrap gap-1.5 text-[10.5px] font-mono font-light tracking-wide ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
           <span>Rekor: <span className={`font-normal ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>{streakStats.bestStreak}h</span> • {streakStats.completionRate}% (30h)</span>
+          {(() => {
+            const todayFocus = habit.focusLog?.[todayStr] || 0;
+            if (todayFocus <= 0) return null;
+            const sessions = habit.focusSessions?.[todayStr] || 0;
+            return (
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-medium ${isDarkMode ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
+                • Hari ini {formatFocusMinutes(todayFocus)} fokus{sessions > 0 ? ` (${sessions} sesi)` : ''}
+              </span>
+            );
+          })()}
           <button
             type="button"
             aria-label={`Tulis catatan hari ini untuk ${habit.name}${habit.notes?.[todayStr] ? ' — sudah ada catatan' : ''}`}

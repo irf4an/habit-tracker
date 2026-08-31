@@ -89,6 +89,8 @@ export async function flushOutboxQueue(): Promise<boolean> {
           history: item.habit.history,
           notes: item.habit.notes || {},
           moods: item.habit.moods || {},
+          focus_log: item.habit.focusLog || {},
+          focus_sessions: item.habit.focusSessions || {},
           created_at: item.habit.createdAt,
           updated_at: new Date(item.timestamp).toISOString(),
         });
@@ -173,6 +175,8 @@ export async function fetchCloudHabits(userId: string): Promise<Habit[] | null> 
       history: item.history || {},
       notes: item.notes || {},
       moods: item.moods || {},
+      focusLog: item.focus_log || {},
+      focusSessions: item.focus_sessions || {},
       createdAt: item.created_at,
     }));
   } catch (err) {

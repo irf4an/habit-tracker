@@ -10,6 +10,7 @@ import { getTodayString } from './utils';
 import { HelpCircle, Sun, Moon } from 'lucide-react';
 import { MaterialIcon } from './components/MaterialIcon';
 import { FluentOutlineIcon } from './components/FluentOutlineIcon';
+import { formatFocusMinutes } from './utils';
 
 // Custom Hooks (ADR-0001 & ADR-0004: State Decomposition & Memoized Analytics)
 import { useHabits } from './hooks/useHabits';
@@ -111,7 +112,7 @@ export function App() {
     onToggleDate: handleToggleDate,
   });
 
-  // Pomodoro Actions
+  // Pomodoro Actions — start paused so user can pick duration before timer runs
   const handleStartPomodoro = (habit: Habit) => {
     setIsModalOpen(false);
     setShowProfile(false);
@@ -122,7 +123,7 @@ export function App() {
       habit,
       totalSeconds: 25 * 60,
       remainingSeconds: 25 * 60,
-      isRunning: true,
+      isRunning: false,
     });
   };
 
@@ -174,6 +175,9 @@ export function App() {
   // Filter habits for calendar view (Category & Time of Day)
   const categories = React.useMemo(() => ['All', ...Array.from(new Set(habits.map((h) => h.category).filter(Boolean)))], [habits]);
   const activeHabits = React.useMemo(() => habits.filter((h) => !h.archived), [habits]);
+  const todayStrForHeader = getTodayString();
+  const totalTodayFocus = React.useMemo(() => activeHabits.reduce((acc, h) => acc + (h.focusLog?.[todayStrForHeader] || 0), 0), [activeHabits, todayStrForHeader]);
+  const totalTodaySessions = React.useMemo(() => activeHabits.reduce((acc, h) => acc + (h.focusSessions?.[todayStrForHeader] || 0), 0), [activeHabits, todayStrForHeader]);
   
   // Memoized 50 Badges & Level Derivation (ADR-0004)
   const { unlockedCount, totalCount, level } = useAchievements(habits);
@@ -266,6 +270,14 @@ export function App() {
 
       {/* Main Container */}
       <main id="main-content" tabIndex={-1} className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 pb-24 sm:pb-10 outline-none">
+        {/* Header Total Focus Today */}
+        {activeTab === 'calendar' && totalTodayFocus > 0 && (
+          <div className={`mb-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium ${isDarkMode ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
+            <span>⏱</span>
+            <span>Hari ini total fokus {formatFocusMinutes(totalTodayFocus)}</span>
+            {totalTodaySessions > 0 && <span className="opacity-70">• {totalTodaySessions} sesi</span>}
+          </div>
+        )}
         {/* Time of Day & Category Filter Bar */}
         {activeTab === 'calendar' && (
           <div className="space-y-2.5 mb-4">

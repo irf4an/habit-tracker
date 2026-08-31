@@ -132,6 +132,8 @@ export function useHabits(userId: string | null) {
         frequency: data.frequency || 'everyday',
         weeklyTargetDays: data.weeklyTargetDays,
         timeOfDay: data.timeOfDay || 'anytime',
+        reminderEnabled: Boolean(data.reminderEnabled),
+        reminderTime: data.reminderTime || '20:00',
         createdAt: getTodayString(),
         history: {},
         notes: {},
@@ -168,7 +170,7 @@ export function useHabits(userId: string | null) {
     );
   };
 
-  // Complete Pomodoro session for habit
+  // Complete Pomodoro session for habit — also accumulates focusLog per day
   const handlePomodoroComplete = (habitId: string, minutesCompleted: number) => {
     const today = getTodayString();
     setHabits((prev) =>
@@ -176,6 +178,10 @@ export function useHabits(userId: string | null) {
         if (h.id !== habitId) return h;
         const currentVal = h.history[today] || 0;
         const newHistory = { ...h.history };
+        const newFocusLog = { ...(h.focusLog || {}) };
+        const newSessions = { ...(h.focusSessions || {}) };
+        newFocusLog[today] = (newFocusLog[today] || 0) + minutesCompleted;
+        newSessions[today] = (newSessions[today] || 0) + 1;
 
         if (h.type === 'numeric') {
           const target = h.targetValue || 1;
@@ -185,7 +191,7 @@ export function useHabits(userId: string | null) {
           newHistory[today] = 1;
         }
 
-        const updated = { ...h, history: newHistory };
+        const updated = { ...h, history: newHistory, focusLog: newFocusLog, focusSessions: newSessions };
         if (userIdRef.current) syncHabitToCloud(userIdRef.current, updated);
         return updated;
       })
@@ -204,6 +210,10 @@ export function useHabits(userId: string | null) {
 
       const notesDemo: Record<string, string> = {};
       const moodsDemo: Record<string, import('../types').DailyMood> = {};
+      const codingFocusToday = 50;
+      const codingFocusYesterday = 75;
+      const codingSessionsToday = 2;
+      const codingSessionsYesterday = 3;
 
       // Seed 28 days back (4 weeks)
       for (let i = 0; i < 28; i++) {
@@ -241,6 +251,11 @@ export function useHabits(userId: string | null) {
           if (i < 20) bikingHistory[dateStr] = 1;
         }
       }
+      // Inject focusLog demo for today/yesterday to evaluate daily focus stats
+      const todayStr = formatDate(today);
+      const yesterday = new Date(today);
+      yesterday.setDate(today.getDate() - 1);
+      const yStr = formatDate(yesterday);
 
       const startMonthAgo = new Date(today);
       startMonthAgo.setDate(today.getDate() - 30);
@@ -259,6 +274,8 @@ export function useHabits(userId: string | null) {
           createdAt: createdDateStr,
           history: gymHistory,
           notes: {},
+          focusLog: { [todayStr]: 25 },
+          focusSessions: { [todayStr]: 1 },
         },
         {
           id: 'demo-2',
@@ -290,6 +307,8 @@ export function useHabits(userId: string | null) {
           createdAt: createdDateStr,
           history: codingHistory,
           notes: {},
+          focusLog: { [todayStr]: codingFocusToday, [yStr]: codingFocusYesterday },
+          focusSessions: { [todayStr]: codingSessionsToday, [yStr]: codingSessionsYesterday },
         },
         {
           id: 'demo-4',

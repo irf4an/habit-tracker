@@ -35,6 +35,10 @@ export interface Habit {
   reminderTime?: string; // "HH:mm" e.g. "08:00", "20:30"
   lastNotifiedDate?: string; // "YYYY-MM-DD" to avoid multiple alerts per day
   snoozedUntil?: number; // epoch ms until which reminder is snoozed
+
+  // Pomodoro Focus minutes & sessions logged per day
+  focusLog?: Record<string, number>; // date "YYYY-MM-DD" -> total focus minutes that day
+  focusSessions?: Record<string, number>; // date "YYYY-MM-DD" -> count of focus sessions that day
 }
 
 export interface QuietHours {
