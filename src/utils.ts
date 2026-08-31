@@ -24,6 +24,17 @@ export function formatFocusMinutes(totalMinutes: number): string {
   return m === 0 ? `${h}j` : `${h}j ${m}m`;
 }
 
+export function formatDisplayDate(dateStr: string): string {
+  const d = parseDate(dateStr);
+  const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  const dayName = dayNames[d.getDay()];
+  const day = d.getDate();
+  const month = monthNames[d.getMonth()];
+  const year = d.getFullYear();
+  return `${dayName}, ${day} ${month} ${year}`;
+}
+
 export interface GridColumn {
   date: Date;
   dateStr: string;

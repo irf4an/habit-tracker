@@ -27,6 +27,19 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // ponytail: exclude lazy vendors from precache → on-demand 457KB
+        // note: Workbox globIgnores is simpler than navigateFallbackDenylist
+        globIgnores: ['**/vendor-html2canvas-*.js', '**/vendor-supabase-*.js'],
+        runtimeCaching: [
+          {
+            urlPattern: /\/assets\/vendor-(html2canvas|supabase)-.*\.js$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'lazy-vendor',
+              expiration: { maxEntries: 6, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+        ],
       },
     }),
   ],

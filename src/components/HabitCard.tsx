@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Habit, DailyMood } from '../types';
-import { getTodayString, getYearDays, calculateStreak, canFreezeOnDate, freezeRemaining, FREEZE_WEEKLY_LIMIT, formatFocusMinutes } from '../utils';
+import { getTodayString, getYearDays, calculateStreak, canFreezeOnDate, freezeRemaining, FREEZE_WEEKLY_LIMIT, formatFocusMinutes, formatDisplayDate } from '../utils';
 import { MaterialIcon } from './MaterialIcon';
 import confetti from 'canvas-confetti';
 import { playCheckSound, playUncheckSound } from '../sound';
@@ -598,7 +598,7 @@ export const HabitCard: React.FC<HabitCardProps> = React.memo(({
                 <span className="text-xl" aria-hidden>{habit.emoji}</span>
                 <div>
                   <h4 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{habit.name}</h4>
-                  <p className={`text-[11px] font-mono ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>{selectedDate}</p>
+                  <p className={`text-[11px] ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>{formatDisplayDate(selectedDate)}</p>
                 </div>
               </div>
               <button type="button" aria-label="Tutup detail hari" onClick={() => setSelectedDate(null)} className={`p-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'text-zinc-400 hover:text-white hover:bg-[#1f1f2e]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'}`}>
