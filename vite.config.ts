@@ -35,14 +35,14 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('html2canvas') || id.includes('canvas-confetti')) {
-              return 'vendor-canvas';
+            if (id.includes('html2canvas')) {
+              return 'vendor-html2canvas';
+            }
+            if (id.includes('canvas-confetti')) {
+              return 'vendor-confetti';
             }
             if (id.includes('@supabase')) {
               return 'vendor-supabase';
-            }
-            if (id.includes('motion')) {
-              return 'vendor-motion';
             }
             if (id.includes('react') || id.includes('scheduler')) {
               return 'vendor-react';
