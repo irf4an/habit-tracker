@@ -312,10 +312,12 @@ export const ManageView: React.FC<ManageViewProps> = ({
           </button>
           <button
             onClick={onResetSample}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-full text-xs font-semibold cursor-pointer transition-all sm:ml-auto leading-none"
+            disabled={habits.length === 0}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-full text-xs font-semibold cursor-pointer transition-all sm:ml-auto leading-none disabled:opacity-40 disabled:cursor-not-allowed"
+            title={habits.length === 0 ? 'Tidak ada data untuk dihapus' : 'Hapus semua kebiasaan'}
           >
-            <MaterialIcon name="refresh" size={16} />
-            Reset Contoh
+            <MaterialIcon name="delete" size={16} />
+            Hapus Semua Data
           </button>
         </div>
       </div>
