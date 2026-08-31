@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Habit, QuietHours } from '../types';
 import { getTodayString } from '../utils';
 import { sendHabitNotification, isInQuietHours } from '../notification';
@@ -10,8 +10,15 @@ export function useReminders(
   setHabits: React.Dispatch<React.SetStateAction<Habit[]>>,
   quietHours: QuietHours
 ) {
+  const habitsRef = useRef(habits);
+  habitsRef.current = habits;
+  const quietHoursRef = useRef(quietHours);
+  quietHoursRef.current = quietHours;
+
   useEffect(() => {
     const checkReminders = () => {
+      const currentHabits = habitsRef.current;
+      const currentQuietHours = quietHoursRef.current;
       const now = new Date();
       const currentHours = String(now.getHours()).padStart(2, '0');
       const currentMins = String(now.getMinutes()).padStart(2, '0');
@@ -19,10 +26,10 @@ export function useReminders(
       const todayStr = getTodayString();
       const nowMs = Date.now();
 
-      if (quietHours.enabled && isInQuietHours(quietHours.start, quietHours.end, now)) return;
+      if (currentQuietHours.enabled && isInQuietHours(currentQuietHours.start, currentQuietHours.end, now)) return;
 
       // 1. Per-Habit Reminder (waktu custom per habit)
-      habits.forEach((habit) => {
+      currentHabits.forEach((habit) => {
         if (!habit.reminderEnabled || habit.archived) return;
         if (habit.snoozedUntil && nowMs < habit.snoozedUntil) return;
         const isTime = habit.reminderTime === currentTimeStr;
@@ -56,7 +63,7 @@ export function useReminders(
       if (currentTimeStr === '21:00') {
         const lastRecapDate = localStorage.getItem(EVENING_RECAP_KEY);
         if (lastRecapDate !== todayStr) {
-          const activeList = habits.filter((h) => !h.archived);
+          const activeList = currentHabits.filter((h) => !h.archived);
           const remaining = activeList.filter((h) => {
             const val = h.history[todayStr] || 0;
             const target = h.targetValue || 1;
@@ -78,5 +85,5 @@ export function useReminders(
     checkReminders();
     const interval = setInterval(checkReminders, 30000);
     return () => clearInterval(interval);
-  }, [habits, quietHours, setHabits]);
+  }, [setHabits]);
 }

@@ -1,11 +1,21 @@
-import { createClient } from '@supabase/supabase-js';
-
-// Get credentials from env or fallback to empty strings for local offline mode
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
-export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
+type SupabaseClient = import('@supabase/supabase-js').SupabaseClient;
+
+let clientCache: SupabaseClient | null | undefined;
+
+async function getClient(): Promise<SupabaseClient | null> {
+  if (!isSupabaseConfigured) return null;
+  if (clientCache !== undefined) return clientCache;
+  const { createClient } = await import('@supabase/supabase-js');
+  clientCache = createClient(supabaseUrl, supabaseAnonKey);
+  return clientCache;
+}
+
+// Eager export for backwards compat — but null until first use if lazy
+export const supabase: SupabaseClient | null = null;
+
+export { getClient as getSupabaseClient };

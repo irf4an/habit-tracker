@@ -172,26 +172,20 @@ export function App() {
   };
 
   // Filter habits for calendar view (Category & Time of Day)
-  const categories = ['All', ...Array.from(new Set(habits.map((h) => h.category).filter(Boolean)))];
-  const activeHabits = habits.filter((h) => !h.archived);
+  const categories = React.useMemo(() => ['All', ...Array.from(new Set(habits.map((h) => h.category).filter(Boolean)))], [habits]);
+  const activeHabits = React.useMemo(() => habits.filter((h) => !h.archived), [habits]);
   
   // Memoized 50 Badges & Level Derivation (ADR-0004)
   const { unlockedCount, totalCount, level } = useAchievements(habits);
   
-  const filteredHabits = activeHabits.filter((h) => {
-    // Filter Category
-    if (selectedCategory !== 'All' && h.category !== selectedCategory) {
-      return false;
-    }
-    // Filter Time of Day
+  const filteredHabits = React.useMemo(() => activeHabits.filter((h) => {
+    if (selectedCategory !== 'All' && h.category !== selectedCategory) return false;
     if (selectedTimeOfDay !== 'all') {
       const habitTime = h.timeOfDay || 'anytime';
-      if (selectedTimeOfDay !== habitTime) {
-        return false;
-      }
+      if (selectedTimeOfDay !== habitTime) return false;
     }
     return true;
-  });
+  }), [activeHabits, selectedCategory, selectedTimeOfDay]);
 
   return (
     <div className={`min-h-[100dvh] flex flex-col transition-colors duration-200 ${isDarkMode ? 'bg-[#0b0b0e] text-zinc-100 selection:bg-indigo-600 selection:text-white' : 'bg-[#fbfbfe] text-zinc-900 selection:bg-indigo-500 selection:text-white'}`}>

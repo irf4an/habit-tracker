@@ -19,7 +19,7 @@ interface HabitCardProps {
   index: number;
 }
 
-export const HabitCard: React.FC<HabitCardProps> = ({
+export const HabitCard: React.FC<HabitCardProps> = React.memo(({
   habit,
   isFullView,
   isDarkMode = true,
@@ -710,4 +710,4 @@ export const HabitCard: React.FC<HabitCardProps> = ({
       )}
     </div>
   );
-};
+});

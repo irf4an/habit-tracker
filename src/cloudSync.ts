@@ -1,5 +1,5 @@
 import { Habit, UserProfile } from './types';
-import { supabase, isSupabaseConfigured } from './supabase';
+import { isSupabaseConfigured, getSupabaseClient } from './supabase';
 
 const OUTBOX_KEY = 'minimal_habit_sync_outbox_v1';
 
@@ -54,9 +54,11 @@ function enqueueOutbox(action: OutboxPayload) {
 // Flush all pending outbox actions to Supabase with retry logic
 let isFlushing = false;
 export async function flushOutboxQueue(): Promise<boolean> {
-  if (isFlushing || !isSupabaseConfigured || !supabase || !navigator.onLine) {
+  if (isFlushing || !isSupabaseConfigured || !navigator.onLine) {
     return false;
   }
+  const supabase = await getSupabaseClient();
+  if (!supabase) return false;
 
   const queue = getOutboxQueue();
   if (queue.length === 0) return true;
@@ -139,7 +141,9 @@ if (typeof window !== 'undefined') {
 
 // 1. Fetch habits from Supabase
 export async function fetchCloudHabits(userId: string): Promise<Habit[] | null> {
-  if (!isSupabaseConfigured || !supabase || !navigator.onLine) return null;
+  if (!isSupabaseConfigured || !navigator.onLine) return null;
+  const supabase = await getSupabaseClient();
+  if (!supabase) return null;
 
   try {
     const { data, error } = await supabase
@@ -211,7 +215,9 @@ export async function deleteHabitFromCloud(userId: string, habitId: string) {
 
 // 4. Fetch profile from Supabase
 export async function fetchCloudProfile(userId: string): Promise<UserProfile | null> {
-  if (!isSupabaseConfigured || !supabase || !navigator.onLine) return null;
+  if (!isSupabaseConfigured || !navigator.onLine) return null;
+  const supabase = await getSupabaseClient();
+  if (!supabase) return null;
 
   try {
     const { data, error } = await supabase
