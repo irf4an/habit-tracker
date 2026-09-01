@@ -243,21 +243,65 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   if (isMinimized) {
     const isFinished = postFocusState === 'finished';
     return (
-      <div className="fixed bottom-5 left-5 z-[90] animate-in slide-in-from-bottom duration-200">
-        <div className="bg-[#14141d]/95 backdrop-blur-md border border-[#2a2a3e] rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3.5" style={{ boxShadow: `0 8px 30px rgba(0,0,0,0.6), 0 0 20px ${session.habit.color}25` }}>
-          <div className="flex items-center gap-2">
-            <span className="text-xl" aria-hidden>{isFinished ? '☕' : session.habit.emoji}</span>
-            <div>
-              <div className="text-xs font-bold text-white leading-tight">{session.habit.name}</div>
-              <div className="text-[11px] font-mono font-semibold" style={{ color: isFinished ? '#10b981' : session.habit.color }}>
-                {isFinished ? `${restFormatted} • Istirahat` : `${timeFormatted} • Fokus`}
+      <div className="fixed bottom-[74px] sm:bottom-5 left-3 right-3 sm:left-5 sm:right-auto sm:max-w-xs z-[45] animate-in slide-in-from-bottom duration-200">
+        <div
+          className={`backdrop-blur-md border rounded-2xl px-3.5 py-2.5 shadow-2xl flex items-center justify-between gap-3 ${
+            isDarkMode
+              ? 'bg-[#14141d]/95 border-[#2a2a3e] text-white'
+              : 'bg-white/95 border-zinc-200 text-zinc-900 shadow-xl'
+          }`}
+          style={{
+            boxShadow: isDarkMode
+              ? `0 10px 32px rgba(0,0,0,0.7), 0 0 20px ${session.habit.color}25`
+              : `0 10px 30px rgba(0,0,0,0.12), 0 0 20px ${session.habit.color}20`,
+          }}
+        >
+          <div className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer select-none" onClick={() => setIsMinimized(false)}>
+            <span className="text-xl shrink-0" aria-hidden>{isFinished ? '☕' : session.habit.emoji}</span>
+            <div className="min-w-0 flex-1">
+              <div className={`text-xs font-bold truncate leading-tight ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{session.habit.name}</div>
+              <div className="text-[10.5px] font-mono font-semibold flex items-center gap-1.5" style={{ color: isFinished ? '#10b981' : session.habit.color }}>
+                <span>{isFinished ? restFormatted : timeFormatted}</span>
+                <span className="opacity-60">•</span>
+                <span className="font-normal truncate">{isFinished ? 'Istirahat' : 'Fokus'}</span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            {!isFinished && <button type="button" onClick={togglePlayPause} className="p-1.5 bg-[#20202e] hover:bg-[#2c2c40] text-white rounded-lg">{session.isRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-white" />}</button>}
-            <button type="button" onClick={() => setIsMinimized(false)} className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-[#20202e]"><Maximize2 className="w-3.5 h-3.5" /></button>
-            <button type="button" onClick={() => onUpdateSession(null)} className="p-1.5 text-zinc-500 hover:text-rose-400 rounded-lg hover:bg-rose-950/30"><X className="w-3.5 h-3.5" /></button>
+          <div className="flex items-center gap-1 shrink-0">
+            {!isFinished && (
+              <button
+                type="button"
+                aria-label={session.isRunning ? 'Jeda timer' : 'Mulai timer'}
+                onClick={togglePlayPause}
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                  isDarkMode
+                    ? 'bg-[#20202e] hover:bg-[#2c2c40] text-white'
+                    : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-800'
+                }`}
+              >
+                {session.isRunning ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+              </button>
+            )}
+            <button
+              type="button"
+              aria-label="Perbesar timer"
+              onClick={() => setIsMinimized(false)}
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                isDarkMode
+                  ? 'text-zinc-400 hover:text-white hover:bg-[#20202e]'
+                  : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'
+              }`}
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Tutup timer"
+              onClick={() => onUpdateSession(null)}
+              className="p-1.5 text-zinc-500 hover:text-rose-400 rounded-lg hover:bg-rose-950/30 transition-colors cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </div>

@@ -31,15 +31,27 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Navigate requests must bypass SW — Chrome bfcache + NavigationPreload restore should always hit network for HTML
-        navigateFallback: null,
-        navigateFallbackDenylist: [/^\/.*$/],
+        navigateFallback: '/index.html',
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         globIgnores: ['**/vendor-html2canvas-*.js', '**/vendor-supabase-*.js'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
         runtimeCaching: [
+          // 1. HTML Navigation Request — NetworkFirst agar F5 selalu ambil HTML & bundle JS terbaru
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'html-cache',
+              networkTimeoutSeconds: 3,
+              expiration: {
+                maxEntries: 5,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 hari fallback offline
+              },
+            },
+          },
+          // 2. Lazy Vendor Chunks
           {
             urlPattern: /\/assets\/vendor-(html2canvas|supabase)-.*\.js$/,
             handler: 'CacheFirst',

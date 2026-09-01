@@ -10,9 +10,21 @@ export function useHabits(userId: string | null) {
   const [habits, setHabits] = useState<Habit[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        // Bersihkan peninggalan v1 jika v2 sudah aktif
+        try { localStorage.removeItem('minimal_habit_tracker_data_v1'); } catch {}
+        return JSON.parse(saved);
+      }
       const v1 = localStorage.getItem('minimal_habit_tracker_data_v1');
-      if (v1) return JSON.parse(v1);
+      if (v1) {
+        const parsed = JSON.parse(v1);
+        // Migrasi v1 → v2 lalu hapus v1 untuk menghemat storage & mencegah duplikasi
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+          localStorage.removeItem('minimal_habit_tracker_data_v1');
+        } catch {}
+        return parsed;
+      }
     } catch (e) {
       console.error('Failed to load habits from localStorage', e);
     }
@@ -27,10 +39,42 @@ export function useHabits(userId: string | null) {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(habits));
+      // Pastikan v1 tidak hidup berdampingan dengan v2 (hapus jika masih ada)
+      if (localStorage.getItem('minimal_habit_tracker_data_v1') !== null) {
+        localStorage.removeItem('minimal_habit_tracker_data_v1');
+      }
     } catch (e) {
       console.error('Failed to save habits to localStorage', e);
     }
   }, [habits]);
+
+  // Re-hydrate habits dari localStorage saat event pageshow (F5/bfcache restore) & visibilitychange
+  useEffect(() => {
+    const syncHabitsFromStorage = () => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            setHabits(parsed);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to sync habits on pageshow/focus:', e);
+      }
+    };
+
+    window.addEventListener('pageshow', syncHabitsFromStorage);
+    const onVisibility = () => {
+      if (!document.hidden) syncHabitsFromStorage();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      window.removeEventListener('pageshow', syncHabitsFromStorage);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []);
 
   // Toggle check/value for specific date
   const handleToggleDate = (habitId: string, dateStr: string, value?: number) => {

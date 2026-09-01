@@ -3,8 +3,8 @@ import { UserProfile, Habit } from '../types';
 import { fetchCloudHabits, syncHabitToCloud, fetchCloudProfile, syncProfileToCloud } from '../cloudSync';
 
 export function useAuthProfile(
-  habits: Habit[],
-  setHabits: (habits: Habit[]) => void
+  onHabitsLoaded?: (habits: Habit[]) => void,
+  currentHabits?: Habit[]
 ) {
   const [userId, setUserId] = useState<string | null>(() => {
     try {
@@ -50,9 +50,9 @@ export function useAuthProfile(
       // Load cloud data on login
       const cloudHabits = await fetchCloudHabits(user.id);
       if (cloudHabits && cloudHabits.length > 0) {
-        setHabits(cloudHabits);
-      } else {
-        habits.forEach((h) => syncHabitToCloud(user.id, h));
+        if (onHabitsLoaded) onHabitsLoaded(cloudHabits);
+      } else if (currentHabits && currentHabits.length > 0) {
+        currentHabits.forEach((h) => syncHabitToCloud(user.id, h));
       }
 
       const cloudProfile = await fetchCloudProfile(user.id);

@@ -159,17 +159,15 @@ export function App() {
   // Hook 1: Theme Management
   const { isDarkMode, toggleTheme } = useTheme();
 
-  // Hook 2: User Profile & Cloud Auth
-  const {
-    userId,
-    userEmail,
-    userProfile,
-    handleAuthSuccess,
-    handleSignOut,
-    handleSaveProfile,
-  } = useAuthProfile([], () => {});
+  // Hook 2: Habit Data & Operations (Didefinisikan dulu agar setHabits & habits tersedia)
+  const [userIdState, setUserIdState] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('minimal_habit_auth_user_id');
+    } catch {
+      return null;
+    }
+  });
 
-  // Hook 3: Habit Data & Operations with Connected userId
   const {
     habits,
     setHabits,
@@ -181,7 +179,17 @@ export function App() {
     handleToggleArchive,
     handlePomodoroComplete,
     handleResetSample,
-  } = useHabits(userId);
+  } = useHabits(userIdState);
+
+  // Hook 3: User Profile & Cloud Auth (Terkoneksi langsung dengan setHabits dan habits)
+  const {
+    userId,
+    userEmail,
+    userProfile,
+    handleAuthSuccess,
+    handleSignOut,
+    handleSaveProfile,
+  } = useAuthProfile((loadedHabits) => setHabits(loadedHabits), habits);
 
   // Hook 4: Daily Reminders & Quiet Hours
   useReminders(habits, setHabits, quietHours);
@@ -196,7 +204,15 @@ export function App() {
     onToggleDate: handleToggleDate,
   });
 
-  // Pomodoro Actions — start paused so user can pick duration before timer runs
+  const handleAuthSuccessWrapped = async (user: { id: string; email: string }) => {
+    setUserIdState(user.id);
+    await handleAuthSuccess(user);
+  };
+
+  const handleSignOutWrapped = () => {
+    setUserIdState(null);
+    handleSignOut();
+  };
   const handleStartPomodoro = (habit: Habit) => {
     setIsModalOpen(false);
     setShowProfile(false);
@@ -594,8 +610,8 @@ export function App() {
             isOpen={showAuth}
             onClose={() => setShowAuth(false)}
             userEmail={userEmail}
-            onAuthSuccess={handleAuthSuccess}
-            onSignOut={handleSignOut}
+            onAuthSuccess={handleAuthSuccessWrapped}
+            onSignOut={handleSignOutWrapped}
             isDarkMode={isDarkMode}
           />
         )}

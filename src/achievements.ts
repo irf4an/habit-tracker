@@ -26,6 +26,10 @@ export function calculateBadges(habits: Habit[]): {
   const totalNotes = habits.reduce((acc, h) => acc + Object.keys(h.notes || {}).length, 0);
   const frozenCount = habits.reduce((acc, h) => acc + (h.frozenDates || []).length, 0);
   const reminderCount = habits.filter((h) => h.reminderEnabled).length;
+  const totalFocusSessions = habits.reduce(
+    (acc, h) => acc + Object.values(h.focusSessions || {}).reduce((a, b) => a + (b as number), 0),
+    0
+  );
   const perfectWeeks = (() => {
     // Cheap approx: weeks where completions >= activeHabits * 4
     // Reuse habitStats completionRate already covers 30d; just use maxStreak as proxy
@@ -95,7 +99,7 @@ export function calculateBadges(habits: Habit[]): {
     { id: 'explorer',   title: 'Explorer',          description: 'Mencoba seluruh kategori kebiasaan.', icon: '🗺️', category: 'diversity', currentValue: diversityFromCategories, targetValue: 4 },
     { id: 'minimalist', title: 'Less is More',     description: 'Mempertahankan streak 14 hari pada satu kebiasaan.', icon: '🎯', category: 'focus', currentValue: activeHabitsCount === 1 && maxStreak >= 14 ? 1 : 0, targetValue: 1 },
     { id: 'social-butterfly', title: 'Share the Love', description: 'Membagikan kartu streak.', icon: '📣', category: 'total', currentValue: totalCompletions >= 5 ? 1 : 0, targetValue: 1 },
-    { id: 'pomodoro-pro', title: 'Pomodoro Pro',    description: 'Menyelesaikan 5 sesi fokus Pomodoro.', icon: '🍅', category: 'focus', currentValue: totalCompletions >= 5 ? 1 : 0, targetValue: 1 },
+    { id: 'pomodoro-pro', title: 'Pomodoro Pro',    description: 'Menyelesaikan 5 sesi fokus Pomodoro.', icon: '🍅', category: 'focus', currentValue: totalFocusSessions, targetValue: 5 },
   ];
 
   const badges: Badge[] = BADGE_DEFINITIONS.map((def) => {
