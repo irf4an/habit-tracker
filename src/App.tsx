@@ -1,4 +1,4 @@
-import React, { useState, useRef, lazy, Suspense } from 'react';
+import React, { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { Habit, ViewTab, QuietHours } from './types';
 import { HabitCard } from './components/HabitCard';
 import { StatsView } from './components/StatsView';
@@ -20,11 +20,13 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useTheme } from './hooks/useTheme';
 import { useAchievements } from './hooks/useAchievements';
 
-// Lazy Loaded Modals for Code-Splitting (ADR-0002)
+// PomodoroTimer MUST be eager (not lazy) — critical path, must not depend on chunk load after SW cache invalidation
+import { PomodoroTimer } from './components/PomodoroTimer';
+
+// Lazy Loaded Modals for Code-Splitting (ADR-0002) — Pomodoro excluded
 const HabitModal = lazy(() => import('./components/HabitModal').then((m) => ({ default: m.HabitModal })));
 const ShareCardModal = lazy(() => import('./components/ShareCardModal').then((m) => ({ default: m.ShareCardModal })));
 const OnboardingModal = lazy(() => import('./components/OnboardingModal').then((m) => ({ default: m.OnboardingModal })));
-const PomodoroTimer = lazy(() => import('./components/PomodoroTimer').then((m) => ({ default: m.PomodoroTimer })));
 const AchievementsModal = lazy(() => import('./components/AchievementsModal').then((m) => ({ default: m.AchievementsModal })));
 const ProfileModal = lazy(() => import('./components/ProfileModal').then((m) => ({ default: m.ProfileModal })));
 const AuthModal = lazy(() => import('./components/AuthModal').then((m) => ({ default: m.AuthModal })));
@@ -52,7 +54,89 @@ export function App() {
   const [showAchievements, setShowAchievements] = useState<boolean>(false);
   const [showProfile, setShowProfile] = useState<boolean>(false);
   const [showAuth, setShowAuth] = useState<boolean>(false);
-  const [pomodoroSession, setPomodoroSession] = useState<PomodoroSession | null>(null);
+  const POMODORO_STORAGE_KEY = 'minimal_habit_pomodoro_session_v1';
+
+  const [pomodoroSession, setPomodoroSession] = useState<PomodoroSession | null>(() => {
+    try {
+      const raw = localStorage.getItem(POMODORO_STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !parsed.habit) return null;
+
+      // Jika saat refresh statusnya sedang berjalan (running), hitung sisa waktu aktual berdasarkan targetEndTime
+      if (parsed.isRunning && parsed.targetEndTime) {
+        const now = Date.now();
+        // Sesi sudah lewat (melewati target) — jangan paksa tetap idle, PomodoroTimer akan trigger finish
+        const remaining = Math.max(0, Math.ceil((parsed.targetEndTime - now) / 1000));
+        return {
+          ...parsed,
+          remainingSeconds: remaining,
+        };
+      }
+      return parsed;
+    } catch {
+      return null;
+    }
+  });
+
+  // Hydrate pomodoro dari storage — robust untuk F5/close-tab/reopen & SW bfcache
+  // Alasan: F5 normal bisa di-serve dari HTTP cache/SW dengan React state fresh (null),
+  // sedang hard refresh bypass cache. Sinkronisasi eksplisit menjamin LS selalu dipulihkan.
+  useEffect(() => {
+    const syncFromStorage = () => {
+      try {
+        const raw = localStorage.getItem(POMODORO_STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (!parsed || !parsed.habit) return;
+        // Jika LS punya sesi aktif yang belum lewat, paksa pulihkan walau state sudah ada
+        // (menangani kasus initializer terlewat karena bfcache/SW lifecycle)
+        const lsIsActive = parsed.isRunning && parsed.targetEndTime && parsed.targetEndTime > Date.now() - 1000;
+        setPomodoroSession((prev) => {
+          // Jika LS aktif tapi state kosong/sudah selesai, pulihkan
+          if (lsIsActive && (prev === null || prev.remainingSeconds === 0)) {
+            const remaining = Math.max(0, Math.ceil((parsed.targetEndTime - Date.now()) / 1000));
+            return { ...parsed, remainingSeconds: remaining } as PomodoroSession;
+          }
+          // Jika keduanya ada, jangan overwrite yang sedang berjalan
+          if (prev !== null) return prev;
+          if (parsed.isRunning && parsed.targetEndTime) {
+            const remaining = Math.max(0, Math.ceil((parsed.targetEndTime - Date.now()) / 1000));
+            return { ...parsed, remainingSeconds: remaining } as PomodoroSession;
+          }
+          return parsed as PomodoroSession;
+        });
+      } catch {}
+    };
+    // Langsung coba sekali saat mount (menangani close-tab → reopen di mana initializer bisa race)
+    syncFromStorage();
+    window.addEventListener('pageshow', syncFromStorage);
+    const onVis = () => { if (!document.hidden) syncFromStorage(); };
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('focus', syncFromStorage);
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('controllerchange', syncFromStorage);
+    }
+    return () => {
+      window.removeEventListener('pageshow', syncFromStorage);
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('focus', syncFromStorage);
+    };
+  }, []);
+
+  // Simpan pomodoro session ke localStorage setiap ada perubahan
+  const handleUpdatePomodoroSession = (newSession: PomodoroSession | null) => {
+    setPomodoroSession(newSession);
+    try {
+      if (newSession) {
+        localStorage.setItem(POMODORO_STORAGE_KEY, JSON.stringify(newSession));
+      } else {
+        localStorage.removeItem(POMODORO_STORAGE_KEY);
+      }
+    } catch (e) {
+      console.error('Failed to persist pomodoro session:', e);
+    }
+  };
 
   const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
     try {
@@ -119,7 +203,7 @@ export function App() {
     setShowAuth(false);
     setShowAchievements(false);
     setShowHelp(false);
-    setPomodoroSession({
+    handleUpdatePomodoroSession({
       habit,
       totalSeconds: 25 * 60,
       remainingSeconds: 25 * 60,
@@ -175,9 +259,6 @@ export function App() {
   // Filter habits for calendar view (Category & Time of Day)
   const categories = React.useMemo(() => ['All', ...Array.from(new Set(habits.map((h) => h.category).filter(Boolean)))], [habits]);
   const activeHabits = React.useMemo(() => habits.filter((h) => !h.archived), [habits]);
-  const todayStrForHeader = getTodayString();
-  const totalTodayFocus = React.useMemo(() => activeHabits.reduce((acc, h) => acc + (h.focusLog?.[todayStrForHeader] || 0), 0), [activeHabits, todayStrForHeader]);
-  const totalTodaySessions = React.useMemo(() => activeHabits.reduce((acc, h) => acc + (h.focusSessions?.[todayStrForHeader] || 0), 0), [activeHabits, todayStrForHeader]);
   
   // Memoized 50 Badges & Level Derivation (ADR-0004)
   const { unlockedCount, totalCount, level } = useAchievements(habits);
@@ -270,14 +351,6 @@ export function App() {
 
       {/* Main Container */}
       <main id="main-content" tabIndex={-1} className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 pb-24 sm:pb-10 outline-none">
-        {/* Header Total Focus Today */}
-        {activeTab === 'calendar' && totalTodayFocus > 0 && (
-          <div className={`mb-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium ${isDarkMode ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
-            <span>⏱</span>
-            <span>Hari ini total fokus {formatFocusMinutes(totalTodayFocus)}</span>
-            {totalTodaySessions > 0 && <span className="opacity-70">• {totalTodaySessions} sesi</span>}
-          </div>
-        )}
         {/* Time of Day & Category Filter Bar */}
         {activeTab === 'calendar' && (
           <div className="space-y-2.5 mb-4">
@@ -315,7 +388,7 @@ export function App() {
 
               {/* Full View Toggle */}
               <div className="flex items-center gap-2.5 ml-auto">
-                <span className={`text-xs font-mono select-none ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>Full View</span>
+                <span className={`text-xs select-none ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>Full View</span>
                 <button
                   type="button"
                   onClick={() => setIsFullView((v) => !v)}
@@ -464,23 +537,13 @@ export function App() {
         isDarkMode={isDarkMode}
       />
 
-      {/* Modals with Lazy Suspense — Pomodoro needs loading fallback to avoid black blank in PWA standalone */}
-      <Suspense
-        fallback={
-          pomodoroSession ? (
-            <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md" aria-busy="true">
-              <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-white animate-spin" />
-            </div>
-          ) : null
-        }
-      >
-        <PomodoroTimer
-          session={pomodoroSession}
-          onUpdateSession={setPomodoroSession}
-          onCompleteHabit={handlePomodoroComplete}
-          isDarkMode={isDarkMode}
-        />
-      </Suspense>
+      {/* Pomodoro is eager (not lazy) — renders instantly even when SW serves stale HTML after tab close */}
+      <PomodoroTimer
+        session={pomodoroSession}
+        onUpdateSession={handleUpdatePomodoroSession}
+        onCompleteHabit={handlePomodoroComplete}
+        isDarkMode={isDarkMode}
+      />
 
       <Suspense fallback={null}>
         {isModalOpen && (

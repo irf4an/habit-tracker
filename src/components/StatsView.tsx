@@ -151,7 +151,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ habits, isDarkMode = true 
               {m.value}
               {m.suffix && <span className={`text-xs sm:text-sm font-normal ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>{m.suffix}</span>}
             </div>
-            <p className={`text-[10.5px] sm:text-[11px] font-light font-mono ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>{m.sub}</p>
+            <p className={`text-[10.5px] sm:text-[11px] font-normal ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>{m.sub}</p>
           </div>
         ))}
       </div>
@@ -165,7 +165,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ habits, isDarkMode = true 
           <h3 className={`text-sm sm:text-base font-bold flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
             <Layers className="w-4 h-4 text-indigo-500" /> Aktivitas Harian
           </h3>
-          <span className={`text-[10.5px] font-light tracking-wide font-mono ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>12 Bulan Terakhir</span>
+          <span className={`text-[10.5px] font-normal tracking-wide ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>12 Bulan Terakhir</span>
         </div>
         <div className="overflow-x-auto pb-1 no-scrollbar touch-pan-x flex justify-start sm:justify-center">
           <div className="min-w-fit flex flex-col gap-1 select-none">
@@ -252,7 +252,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ habits, isDarkMode = true 
           <h3 className={`text-sm sm:text-base font-bold flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
             <BarChart2 className="w-4 h-4 text-emerald-500" /> Hari Paling Produktif
           </h3>
-          <span className={`text-[10.5px] font-light tracking-wide font-mono ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>90 Hari Terakhir</span>
+          <span className={`text-[10.5px] font-normal tracking-wide ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>90 Hari Terakhir</span>
         </div>
         <div className="grid grid-cols-7 gap-2 sm:gap-4 text-center font-mono pt-1" role="img" aria-label={`Konsistensi per hari: ${dayOfWeekPerformance.map((d) => `${d.name} ${d.percent}%`).join(', ')}`}>
           {dayOfWeekPerformance.map((day) => (
@@ -286,7 +286,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ habits, isDarkMode = true 
           <h3 className={`text-sm sm:text-base font-bold flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
             <Target className="w-4 h-4 text-[#8338ec]" /> Peringkat Kebiasaan
           </h3>
-          <span className={`text-[10.5px] font-light tracking-wide font-mono ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>Urut Streak</span>
+          <span className={`text-[10.5px] font-normal tracking-wide ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>Urut Streak</span>
         </div>
         <div role="list" aria-label="Peringkat kebiasaan — urut streak tertinggi" className="space-y-2">
           {stats

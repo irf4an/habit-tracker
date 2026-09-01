@@ -3,6 +3,7 @@ import { Habit } from '../types';
 import { Play, Pause, RotateCcw, X, Minimize2, Maximize2, Timer } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { playPomodoroBell } from '../sound';
+import { requestNotificationPermission, sendHabitNotification } from '../notification';
 
 export interface PomodoroSession {
   habit: Habit;
@@ -10,6 +11,8 @@ export interface PomodoroSession {
   remainingSeconds: number;
   isRunning: boolean;
   targetEndTime?: number; // epoch ms when current run will hit 00:00
+  startedAt?: number; // unique id for dedup across reloads
+  completedAt?: number; // set once when session counted, prevents double-count on reload
 }
 
 interface PomodoroTimerProps {
@@ -81,17 +84,33 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
     }
   }, [postFocusState, restSeconds, isRestRunning]);
 
-  // Focus finished — single-shot
+  // Focus finished — single-shot with dedup across reloads
+  // Bug: tanpa dedup, tiap hard-refresh yang memicu remainingSeconds=0 akan mengeksekusi effect ini lagi → fokus dobel.
   useEffect(() => {
     if (!session || session.remainingSeconds !== 0 || postFocusState !== 'idle') return;
+    // Jika sesi ini sudah pernah dihitung, jangan hitung lagi
+    if (session.completedAt) {
+      setPostFocusState('finished');
+      setRestSeconds(5 * 60);
+      setIsRestRunning(false);
+      return;
+    }
     playPomodoroBell();
     confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 }, colors: [session.habit.color, '#ffffff', '#10b981'] });
     const minutesDone = Math.round(session.totalSeconds / 60) || 25;
+    // Tandai completed sebelum callback agar reload berikutnya tidak dobel
+    onUpdateSession({ ...session, completedAt: Date.now(), isRunning: false });
     onCompleteHabit(session.habit.id, minutesDone);
+    sendHabitNotification(
+      `Sesi Fokus Selesai! 🎉`,
+      `Hebat! Kamu telah menyelesaikan ${minutesDone} menit fokus pada ${session.habit.name}.`,
+      session.habit.emoji || '🎯',
+      'pomodoro-finish-notif'
+    );
     setPostFocusState('finished');
     setRestSeconds(5 * 60);
     setIsRestRunning(false);
-  }, [session, onCompleteHabit, postFocusState]);
+  }, [session, onCompleteHabit, postFocusState, onUpdateSession]);
 
   useEffect(() => {
     if (!session || isMinimized) return;
@@ -100,17 +119,16 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
     return () => window.removeEventListener('keydown', onEsc);
   }, [session, onUpdateSession, isMinimized]);
 
-  // Live OS Notification Timer (HP & Windows Action Center — Polls remaining time accurately in background)
+  // Live OS Notification Timer & Page Title Countdown
   useEffect(() => {
     if (!session || typeof window === 'undefined') return;
     if (!session.isRunning || postFocusState !== 'idle') return;
 
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
-
-    // OS Notification bar: per-menit (stabil, tidak ngaco per detik)
+    // OS Notification bar: kirim update per menit jika izin notifikasi aktif
     let lastNotifiedMins: number | null = null;
 
     const updateOSNotification = (force = false) => {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
       const now = Date.now();
       const targetEnd = session.targetEndTime || now + session.remainingSeconds * 1000;
       const remaining = Math.max(0, Math.ceil((targetEnd - now) / 1000));
@@ -121,15 +139,12 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       if (!force && lastNotifiedMins === mins) return;
       lastNotifiedMins = mins;
 
-      const notification = new Notification(`⏱️ Sedang Fokus: ${mins}m tersisa — ${session.habit.name}`, {
-        body: `Habis ${new Date(targetEnd).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}. Buka tab untuk jeda.`,
-        icon: '/favicon.svg',
-        badge: '/favicon.svg',
-        tag: 'pomodoro-live-timer',
-        silent: true,
-      } as NotificationOptions);
-
-      setTimeout(() => notification.close(), 4000);
+      sendHabitNotification(
+        `Sedang Fokus: ${mins}m tersisa`,
+        `Fokus pada ${session.habit.name}. Target selesai ${new Date(targetEnd).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}.`,
+        '⏱️',
+        'pomodoro-live-timer'
+      );
     };
 
     updateOSNotification(true);
@@ -152,7 +167,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       clearInterval(titleInterval);
       document.title = originalTitle;
     };
-  }, [session, postFocusState]);
+  }, [session?.isRunning, session?.targetEndTime, postFocusState]);
 
   if (!session) return null;
 
@@ -164,7 +179,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   const restFormatted = `${String(restMin).padStart(2, '0')}:${String(restSec).padStart(2, '0')}`;
   const progressPercent = ((session.totalSeconds - session.remainingSeconds) / session.totalSeconds) * 100;
 
-  const togglePlayPause = () => {
+  const togglePlayPause = async () => {
     if (session.isRunning) {
       // Pause: remove targetEndTime so remainingSeconds freezes
       onUpdateSession({
@@ -173,11 +188,20 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
         targetEndTime: undefined,
       });
     } else {
-      // Resume: set new targetEndTime = now + remainingSeconds
+      // Saat user menekan Mulai, minta izin notifikasi secara eksplisit jika belum pernah diminta
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+        try {
+          await requestNotificationPermission();
+        } catch {}
+      }
+
+      // Resume: set new targetEndTime = now + remainingSeconds, dan set startedAt jika belum ada
       onUpdateSession({
         ...session,
         isRunning: true,
         targetEndTime: Date.now() + session.remainingSeconds * 1000,
+        startedAt: session.startedAt || Date.now(),
+        completedAt: undefined,
       });
     }
   };
@@ -211,6 +235,8 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       remainingSeconds: 25 * 60,
       isRunning: false,
       targetEndTime: undefined,
+      startedAt: undefined,
+      completedAt: undefined,
     });
   };
 

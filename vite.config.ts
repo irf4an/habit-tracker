@@ -10,6 +10,11 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
+      devOptions: {
+        enabled: false,
+        suppressWarnings: true,
+      },
       includeAssets: ['favicon.svg', 'icons.svg', 'og-image.svg'],
       manifest: {
         name: 'Minimal Habit Tracker',
@@ -26,10 +31,14 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Navigate requests must bypass SW — Chrome bfcache + NavigationPreload restore should always hit network for HTML
+        navigateFallback: null,
+        navigateFallbackDenylist: [/^\/.*$/],
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
-        // ponytail: exclude lazy vendors from precache → on-demand 457KB
-        // note: Workbox globIgnores is simpler than navigateFallbackDenylist
         globIgnores: ['**/vendor-html2canvas-*.js', '**/vendor-supabase-*.js'],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
         runtimeCaching: [
           {
             urlPattern: /\/assets\/vendor-(html2canvas|supabase)-.*\.js$/,

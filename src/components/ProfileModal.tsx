@@ -108,11 +108,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               </div>
             </fieldset>
             <div>
-              <label htmlFor="profile-name" className={`block text-xs font-mono uppercase mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Nama panggilan</label>
+              <label htmlFor="profile-name" className={`block text-xs font-medium uppercase mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Nama panggilan</label>
               <input id="profile-name" type="text" required value={name} onChange={(e) => setName(e.target.value)} className={`w-full border rounded-xl px-3.5 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0c0c11] border-[#262638] text-white' : 'bg-zinc-50 border-zinc-300 text-zinc-900'}`} />
             </div>
             <div>
-              <label htmlFor="profile-bio" className={`block text-xs font-mono uppercase mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Bio / motto</label>
+              <label htmlFor="profile-bio" className={`block text-xs font-medium uppercase mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Bio / motto</label>
               <input id="profile-bio" type="text" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Mis. 1% lebih baik setiap hari" className={`w-full border rounded-xl px-3.5 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0c0c11] border-[#262638] text-white' : 'bg-zinc-50 border-zinc-300 text-zinc-900'}`} />
             </div>
 

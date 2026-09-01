@@ -403,7 +403,7 @@ export const HabitCard: React.FC<HabitCardProps> = React.memo(({
           )}
         </div>
 
-        <div className={`flex items-center flex-wrap gap-1.5 text-[10.5px] font-mono font-light tracking-wide ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
+        <div className={`flex items-center flex-wrap gap-1.5 text-[10.5px] font-normal tracking-normal ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
           <span>Rekor: <span className={`font-normal ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>{streakStats.bestStreak}h</span> • {streakStats.completionRate}% (30h)</span>
           {(() => {
             const todayFocus = habit.focusLog?.[todayStr] || 0;
@@ -608,7 +608,7 @@ export const HabitCard: React.FC<HabitCardProps> = React.memo(({
 
             {isNegative ? (
               <div>
-                <p id={`habit-day-status-${habit.id}-${selectedDate}`} className={`block text-[11px] font-mono mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Status Anti-Habit {selectedDate}</p>
+                <p id={`habit-day-status-${habit.id}-${selectedDate}`} className={`block text-[11px] font-medium mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Status Anti-Habit {selectedDate}</p>
                 <button
                   type="button"
                   aria-describedby={`habit-day-status-${habit.id}-${selectedDate}`}
@@ -625,7 +625,7 @@ export const HabitCard: React.FC<HabitCardProps> = React.memo(({
               </div>
             ) : isNumeric ? (
               <div>
-                <label htmlFor={`habit-day-value-${habit.id}-${selectedDate}`} className={`block text-[11px] font-mono mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                <label htmlFor={`habit-day-value-${habit.id}-${selectedDate}`} className={`block text-[11px] font-medium mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
                   Catat Angka ({habit.unit || 'unit'} - Target: {targetVal})
                 </label>
                 <div className="flex items-center gap-2">
@@ -640,7 +640,7 @@ export const HabitCard: React.FC<HabitCardProps> = React.memo(({
               </div>
             ) : (
               <div>
-                <p id={`habit-day-status-${habit.id}-${selectedDate}`} className={`block text-[11px] font-mono mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Status Tanggal {selectedDate}</p>
+                <p id={`habit-day-status-${habit.id}-${selectedDate}`} className={`block text-[11px] font-medium mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Status Tanggal {selectedDate}</p>
                 <button type="button" aria-describedby={`habit-day-status-${habit.id}-${selectedDate}`} aria-pressed={cellVal === 1} onClick={() => setCellVal((v) => (v === 1 ? 0 : 1))} className={`w-full py-2 rounded-xl font-medium text-xs border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${cellVal === 1 ? 'bg-emerald-600/20 border-emerald-500 text-emerald-600 font-semibold' : isDarkMode ? 'bg-[#181822] border-[#29293a] text-zinc-400' : 'bg-zinc-100 border-zinc-300 text-zinc-600 hover:bg-zinc-200'}`}>
                   {cellVal === 1 ? '✓ Sudah Selesai' : '○ Belum Dikerjakan'}
                 </button>
@@ -648,7 +648,7 @@ export const HabitCard: React.FC<HabitCardProps> = React.memo(({
             )}
             {/* Mood Selector (Mini Mood Tracker v1.2) */}
             <div>
-              <p className={`block text-[11px] font-mono mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Mood / Suasana Hati</p>
+              <p className={`block text-[11px] font-medium mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Mood / Suasana Hati</p>
               <div className={`flex items-center justify-between gap-1.5 p-1 rounded-xl border ${
                 isDarkMode ? 'bg-[#0e0e14] border-[#252538]' : 'bg-zinc-100 border-zinc-300'
               }`}>
@@ -680,7 +680,7 @@ export const HabitCard: React.FC<HabitCardProps> = React.memo(({
             </div>
 
             <div>
-              <label htmlFor={`habit-day-note-${habit.id}-${selectedDate}`} className={`block text-[11px] font-mono mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Catatan Harian (Opsional)</label>
+              <label htmlFor={`habit-day-note-${habit.id}-${selectedDate}`} className={`block text-[11px] font-medium mb-1 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Catatan Harian (Opsional)</label>
               <textarea id={`habit-day-note-${habit.id}-${selectedDate}`} rows={2} placeholder="Bagaimana progres kebiasaanmu hari ini?" value={noteText} onChange={(e) => setNoteText(e.target.value)} className={`w-full border rounded-lg p-2.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0e0e14] border-[#28283a] text-white placeholder-zinc-600' : 'bg-zinc-50 border-zinc-300 text-zinc-900 placeholder-zinc-400'}`} />
             </div>
 

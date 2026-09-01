@@ -142,14 +142,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             )}
             <div>
-              <label htmlFor="auth-email" className={`block text-xs font-mono uppercase mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Email</label>
+              <label htmlFor="auth-email" className={`block text-xs uppercase mb-1.5 font-medium ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Email</label>
               <div className="relative">
                 <Mail className={`w-4 h-4 absolute left-3 top-2.5 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`} aria-hidden />
                 <input id="auth-email" type="email" required placeholder="nama@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className={`w-full border rounded-xl pl-9 pr-3 py-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0a0a0f] border-[#252538] text-white' : 'bg-zinc-50 border-zinc-300 text-zinc-900'}`} />
               </div>
             </div>
             <div>
-              <label htmlFor="auth-password" className={`block text-xs font-mono uppercase mb-1.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Password</label>
+              <label htmlFor="auth-password" className={`block text-xs uppercase mb-1.5 font-medium ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Password</label>
               <div className="relative">
                 <Key className={`w-4 h-4 absolute left-3 top-2.5 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`} aria-hidden />
                 <input id="auth-password" type="password" required minLength={6} placeholder="Minimal 6 karakter" value={password} onChange={(e) => setPassword(e.target.value)} className={`w-full border rounded-xl pl-9 pr-3 py-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8338ec] ${isDarkMode ? 'bg-[#0a0a0f] border-[#252538] text-white' : 'bg-zinc-50 border-zinc-300 text-zinc-900'}`} />

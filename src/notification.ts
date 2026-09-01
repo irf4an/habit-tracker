@@ -1,34 +1,65 @@
-// Browser Web Notifications Helper — now with snooze + quiet-hours utils
+// Browser Web Notifications Helper — with ServiceWorker push support for mobile/desktop
 
 import { playReminderChime } from './sound';
 
 export async function requestNotificationPermission(): Promise<boolean> {
   if (typeof window === 'undefined' || !('Notification' in window)) {
-    alert('Browser kamu belum mendukung Web Notifications.');
     return false;
   }
   if (Notification.permission === 'granted') return true;
   if (Notification.permission !== 'denied') {
-    const perm = await Notification.requestPermission();
-    return perm === 'granted';
+    try {
+      const perm = await Notification.requestPermission();
+      return perm === 'granted';
+    } catch {
+      return false;
+    }
   }
   return false;
 }
 
-export function sendHabitNotification(title: string, body: string, iconEmoji: string = '🎯'): Notification | null {
+export async function sendHabitNotification(
+  title: string,
+  body: string,
+  iconEmoji: string = '🎯',
+  tag?: string
+): Promise<Notification | null> {
   if (typeof window === 'undefined' || !('Notification' in window)) return null;
   if (Notification.permission !== 'granted') return null;
+
   // Local chime + haptic — Web Notifications on desktop are silent by spec, mobile needs vibrate
   try { playReminderChime(); } catch {}
   try { if ('vibrate' in navigator) navigator.vibrate([220, 100, 220]); } catch {}
+
+  const notificationTitle = `${iconEmoji} ${title}`;
+  const options = {
+    body,
+    icon: '/favicon.svg',
+    badge: '/favicon.svg',
+    tag: tag || `habit-reminder-${Date.now()}`,
+    vibrate: [200, 100, 200],
+  } as NotificationOptions & { vibrate?: number[] };
+
+  // 1. Coba via ServiceWorker Registration jika tersedia (wajib untuk Android Chrome / PWA standalone)
   try {
-    const notif = new Notification(`${iconEmoji} ${title}`, {
-      body,
-      icon: '/favicon.svg',
-      badge: '/favicon.svg',
-      tag: `habit-reminder-${Date.now()}`,
-    } as NotificationOptions);
-    notif.onclick = () => { window.focus(); notif.close(); };
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg && reg.showNotification) {
+        await reg.showNotification(notificationTitle, options);
+        return null;
+      }
+    }
+  } catch (err) {
+    console.warn('ServiceWorker showNotification failed, falling back to Notification constructor', err);
+  }
+
+  // 2. Fallback ke window.Notification constructor biasa (Desktop Windows/Mac)
+  try {
+    const notif = new Notification(notificationTitle, options);
+    notif.onclick = () => {
+      window.focus();
+      notif.close();
+    };
     return notif;
   } catch (err) {
     console.error('Failed to trigger notification:', err);

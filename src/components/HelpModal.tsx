@@ -58,7 +58,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, isDarkMod
                   Tambah kebiasaan baru
                 </span>
               </div>
-              <span className={`text-[10.5px] font-mono ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Global</span>
+              <span className={`text-[10.5px] font-medium ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Global</span>
             </div>
 
             {/* 1 - 9 keys */}
@@ -75,7 +75,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, isDarkMod
                   Centang habit hari ini
                 </span>
               </div>
-              <span className={`text-[10.5px] font-mono ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Sesuai No.</span>
+              <span className={`text-[10.5px] font-medium ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Sesuai No.</span>
             </div>
 
             {/* Shift + Click */}
@@ -92,7 +92,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, isDarkMod
                   Catat jurnal / target angka
                 </span>
               </div>
-              <span className={`text-[10.5px] font-mono ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Di Heatmap</span>
+              <span className={`text-[10.5px] font-medium ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Di Heatmap</span>
             </div>
           </div>
 

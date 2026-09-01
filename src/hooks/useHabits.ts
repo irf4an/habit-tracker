@@ -171,8 +171,17 @@ export function useHabits(userId: string | null) {
   };
 
   // Complete Pomodoro session for habit — also accumulates focusLog per day
+  // Guard: jangan tambah dobel jika sudah tercatat untuk startedAt yang sama (hard-refresh dedup)
+  const lastPomodoroKeyRef = useRef<string | null>(null);
   const handlePomodoroComplete = (habitId: string, minutesCompleted: number) => {
     const today = getTodayString();
+    // gunakan habitId+today+minutes sebagai dedup key kasar untuk mencegah double-fire dalam 1 tick
+    const dedupKey = `${habitId}:${today}:${minutesCompleted}:${Date.now() >> 10}`; // bucket 1 detik
+    if (lastPomodoroKeyRef.current === dedupKey) return;
+    lastPomodoroKeyRef.current = dedupKey;
+    // Reset guard setelah 2 detik agar sesi berikutnya tetap bisa dicatat
+    setTimeout(() => { lastPomodoroKeyRef.current = null; }, 2000);
+
     setHabits((prev) =>
       prev.map((h) => {
         if (h.id !== habitId) return h;

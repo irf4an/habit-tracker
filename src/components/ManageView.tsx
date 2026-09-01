@@ -162,7 +162,7 @@ export const ManageView: React.FC<ManageViewProps> = ({
                 <div className={`flex items-center justify-between gap-2 pt-2 border-t ${
                   isDarkMode ? 'border-[#1b1b26]' : 'border-zinc-200/70'
                 }`}>
-                  <div className={`text-[11px] font-light font-mono truncate ${
+                  <div className={`text-[11px] font-normal truncate ${
                     isDarkMode ? 'text-zinc-400' : 'text-zinc-500'
                   }`}>
                     Sejak {habit.createdAt}
